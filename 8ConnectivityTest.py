@@ -11,6 +11,7 @@ import numpy as np
 import numpy.ma as ma
 import matplotlib.pyplot as plt
 import copy
+from functools import reduce
 imgs = glob.glob('*.fits')
 
 pic = np.array([[1,1,0,1,1,1,0,1],
@@ -134,12 +135,12 @@ for x in range(2,label_count+1):
                         mins.append(np.min(nn))
 
     mins = np.array(mins)
-    print mins
+    print(mins)
     if len(mins)==0:
         pass
-#         print current_label
+#         print(current_label)
     else:
-#         print np.min(np.array(mins))
+#         print(np.min(np.array(mins)))
         min_label_connected = np.min(np.array(mins))
 
     for i in range(labels.shape[1]):
@@ -149,8 +150,8 @@ for x in range(2,label_count+1):
 
 
 
-print
-print labels[128,128]
+print("")
+print(labels[128,128])
 
 mask = [labels!=labels[128,128]]
 labels = ma.masked_array(labels, mask=mask)

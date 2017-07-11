@@ -9,9 +9,9 @@ import matplotlib.pyplot as plt
 import numpy.ma as ma
 import numpy as np
 import glob
-import skimage
+#import skimage
 from numpy.core import multiarray
-import cv2
+#import cv2
 
 def plot_image(image_data, cmin=0, cmax=100, cmap='hot'):
     plt.figure()
@@ -38,8 +38,8 @@ def smooth_image(image):
                 moving_avg_img[x,y] = moving_avg_img[x,y]/count
 
 
-    print np.mean(image_data)
-    print np.median(image_data)
+    print(np.mean(image_data))
+    print(np.median(image_data))
 
 
     difference = image_data-moving_avg_img
@@ -61,7 +61,7 @@ def light_profile(image):
 
     x_cent, y_cent = 128, 128
     for r in range(10,150,5):
-        print r
+        print(r)
 
         data_x, data_y = np.meshgrid(x_data, y_data)
         mask = [(np.sqrt((data_x-x_cent)**2 + (data_y-y_cent)**2)>r)]
