@@ -4,7 +4,7 @@ Created on 10 Jul 2017
 @author: Sahl
 '''
 
-import Data_analysis
+from Data_analysis import smooth_image, plot_image
 from astropy.io import fits
 import glob
 import numpy as np
@@ -29,7 +29,7 @@ def isolateGalaxy(image):
                    [1,1,1,1,0,1,1,1]])
     # plt.imshow(pic, cmap='hot')
 
-    pic = Data_analysis.smooth_image(image)
+    pic = smooth_image(image)
     # pic = fits.open(imgs[0])[0].data
 
     labels = np.zeros_like(pic)
@@ -165,7 +165,7 @@ def isolateGalaxy(image):
 
     pic = ma.masked_array(pic, mask=mask)
     pic = ma.filled(pic, 0)
-    Data_analysis.plot_image(pic)
+    plot_image(pic)
 
 #     plt.show()
 
@@ -207,29 +207,39 @@ def GalaxyIsolation(image):
                    [0,0,0,1,0,1,0,1],
                    [1,1,1,1,0,0,0,1],
                    [1,1,1,1,0,1,1,1]])
-    # plt.imshow(pic, cmap='hot')
 
-    pic = Data_analysis.smooth_image(image)
+    pic = smooth_image(image)
 
     labels = np.zeros_like(pic)
     label_count = 0
+    threshold_value = 37
 
     for i in range(pic.shape[1]):
         for j in range(pic.shape[0]):
-            if pic[i,j]<=37:
+            # Threshold value.
+            if pic[i,j] <= threshold_value:
                 pass
             else:
+                # Setting the 1st label.
                 if label_count==0:
                     labels[i,j]=1
                     label_count+=1
                 else:
+                    # Condition to distinguish labeling the 1st row vs other rows.
+                    # If: for the 1st row; else: for the other rows
                     if i==0:
                         if labels[i,j-1]!=0:
+                            # If pixel to the left is labeled, gives current pixel the
+                            # label of its neighbour.
                             labels[i,j]=labels[i,j-1]
                         else:
+                            # Otherwise, a new label is given
                             label_count+=1
                             labels[i,j]=label_count
                     else:
+                        # Finds nearest labeled neighbours. If none are labeled, current
+                        # pixel given new label, otherwise it is given the minimum value of
+                        # the other labels.
                         nearest_neighbours = []
                         for k in range(-1,2,1):
                             if j+k<0 or j+k>7:
@@ -246,29 +256,30 @@ def GalaxyIsolation(image):
                             labels[i,j] = label_count
                         else:
                             labels[i,j] = np.min(nearest_neighbours)
-    #                     print nearest_neighbours, labels[i,j], (i,j)
 
-#     Data_analysis.plot_image(labels, cmin=0, cmax=np.max(labels))
+#     plot_image(labels, cmin=0, cmax=np.max(labels))
 
     size = labels.shape[0]
-
     skip = []
 
     labels_copy = copy.deepcopy(labels)
     for l in range(1,size):
         if l not in skip:
             masks = [labels==0, labels!=l]
+            # masks all pixels that do not have the label value of 'l'. This is done so
+            # that only nearest neighbours of pixels with the label 'l' are used in the
+            # calculations.
             total_mask = reduce(np.logical_or, masks)
             label_mask = ma.masked_array(labels, mask=total_mask)
             label_mask = ma.filled(label_mask, 0)
 
             nonzero_locations = np.transpose(np.nonzero(label_mask))
             nn = []
+            # Finds nearest neighbours
             for coord in nonzero_locations:
                 i = coord[0]
                 j = coord[1]
-#                 print(labels_copy[i,j])
-#                 vertical and horizontal neighbours
+                # vertical and horizontal neighbours
                 if i!=size-1:
                     nn.append(labels_copy[i+1,j])
 #                     print(labels_copy[i+1,j])
@@ -281,6 +292,7 @@ def GalaxyIsolation(image):
                 if j>0:
                     nn.append(labels_copy[i,j-1])
 #                     print(labels_copy[i,j-1])
+
                 # diagonal neighbours
                 if i!=size-1:
                     if j!=size-1:
@@ -296,22 +308,17 @@ def GalaxyIsolation(image):
                 if i>0 and j>0:
                     nn.append(labels_copy[i-1,j-1])
 #                     print(labels_copy[i-1,j-1])
-
-#                     print 'labels of nearest neighbours: ', nn
             nn = np.array(nn)
-#             print('Here')
-#             print(np.unique(nn))
             connected_labels = np.unique(nn)
-
             connected_labels = connected_labels[connected_labels!=0]
-#             print(connected_labels)
+
+            # Loop to skip any child labels found.
             for c in connected_labels:
                 if c not in skip:
                     skip.append(c)
                 labels_copy[labels_copy == c] = l
-#             print(labels_copy)
-#     print(skip)
-#     Data_analysis.plot_image(labels_copy, cmin=0, cmax=np.max(labels_copy))
+
+#     plot_image(labels_copy, cmin=0, cmax=np.max(labels_copy))
 
     labels = labels_copy
 
@@ -320,7 +327,7 @@ def GalaxyIsolation(image):
 
     pic = ma.masked_array(pic, mask=mask)
     pic = ma.filled(pic, 0)
-    Data_analysis.plot_image(pic)
+    plot_image(pic)
 
     hdu = fits.PrimaryHDU(pic)
     hdulist = fits.HDUList([hdu])
@@ -331,8 +338,9 @@ def GalaxyIsolation(image):
 
 #     plt.show()
 
-
-# GalaxyIsolation(imgs[5])
+# t1 = time.clock()
+# GalaxyIsolation(imgs[6])
+# print(time.clock()-t1)
 
 t1 = time.clock()
 
