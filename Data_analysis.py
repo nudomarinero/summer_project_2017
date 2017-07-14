@@ -10,7 +10,10 @@ import numpy.ma as ma
 import numpy as np
 import glob
 import cv2
-import scipy.misc# import skimage
+import scipy.misc
+import matplotlib.mlab as mlab
+from astropy.stats import sigma_clipped_stats
+from skimage import morphology
 # import cv2
 
 def rotateImage(image, angle):
@@ -34,42 +37,31 @@ def plot_image(image_data, cmin=0, cmax=100, cmap='hot',axis=None, text=""):
             transform = ax.transAxes)
     f.subplots_adjust(top=0.95, left=0., right=1.)
 
-def smooth_image(image):
+def smooth_image(image, do_sigma_clipping=True, threshold=None):
 
     image_data = fits.open(image)[0].data
     moving_avg_img = np.zeros_like(image_data)
 
     for y in range(image_data.shape[0]):
         for x in range(image_data.shape[1]):
-            if y<=2 or x<=2 or y>=253 or x>=253:
+            if y<=1 or x<=1 or y>=254 or x>=254:
                 moving_avg_img[x,y]=image_data[x,y]
             else:
                 count = 0
-                for i in range(3):
-                    for j in range(3):
+                for i in range(-1,2,1):
+                    for j in range(-1,2,1):
                         moving_avg_img[x,y]+=image_data[x+i,y+j]
                         count+=1
                 moving_avg_img[x,y] = moving_avg_img[x,y]/count
 
+    if(do_sigma_clipping):
+        image_data_test = image_data[image_data<40]
+        mean, median, std = sigma_clipped_stats(image_data_test, sigma=3.0, iters=10)
+        print(mean,median,std, mean+std)
+        threshold = mean+std
 
-#     print(np.mean(image_data))
-#     print(np.median(image_data))
-
-
-    difference = image_data-moving_avg_img
-    input_plus_difference = image_data+difference
-
-#     plot_image(input_plus_difference)
-#     plot_image(image_data)
-#     plot_image(moving_avg_img)
-
-    return moving_avg_img
+    return moving_avg_img, threshold
 #     plt.show()
-
-imgs = glob.glob('5*.fits')
-print(imgs)
-isolated_galaxies = glob.glob('Isolated_*.fits')
-print(isolated_galaxies)
 
 # def light_profile(image):
 #
@@ -97,17 +89,10 @@ def find_radius(image_data):
 
 # find_radius(isolated_galaxies[3])
 
-def flip_image(image):
+def determine_Asymmetry(image):
     image_data = fits.open(image)[0].data
     flipped_data = image_data[::-1,::-1]
-    flipped_scipy = scipy.misc.imrotate(image_data, 180, interp='nearest')
-#     flipped_numpy = np.fliplr(image_data)
-    f = rotateImage(image_data, 180)
-#     plot_image(image_data=image_data)
-#     plot_image(f,cmin=None, cmax=None)
-#     plot_image(flipped_data)
-#     plot_image(flipped_scipy)
-#     plot_image(flipped_numpy)
+
     diff = np.abs(image_data-flipped_data)
     rad = find_radius(diff)+5
 #     print(rad)
@@ -115,12 +100,25 @@ def flip_image(image):
     plot_image(ma.masked_array(diff, mask=mask),cmax=np.max(diff), cmin=0, cmap='Greys',
                 axis=(128-rad,128+rad,128-rad,128+rad),
                 text = str(np.round(np.sum(diff)/(2*np.sum(image_data)),2)))
-    print(np.sum(diff)/(2*np.sum(image_data)))
+    print(np.sum(diff)/(2*np.sum(image_data)), image.split('_')[1])
 
-# plot_image(smooth_image(imgs[4]))
-# flip_image(isolated_galaxies[4])
 
-for ig in isolated_galaxies:
-    flip_image(ig)
-plt.show()
+if __name__ == "__main__":
+
+    imgs = glob.glob('5*.fits')
+    print(imgs)
+    isolated_galaxies = glob.glob('Isolated_*.fits')
+    print(isolated_galaxies)
+
+    plot_image(smooth_image(imgs[0])[0])
+#     for ig in isolated_galaxies:
+#         determine_Asymmetry(ig)
+
+#     for img in imgs:
+#         plot_image(smooth_image(img)[0])
+    plt.show()
+# determine_Asymmetry(isolated_galaxies[4])
+
+
+# plt.show()
 
