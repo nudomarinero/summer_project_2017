@@ -20,14 +20,19 @@ def rotateImage(image, angle):
     new_image = cv2.warpAffine(image, rot_mat, image.shape[0:2],flags=cv2.INTER_LINEAR)
     return new_image
 
-def plot_image(image_data, cmin=0, cmax=100, cmap='hot',axis=None):
-    plt.figure()
-    plt.imshow(image_data, clim=[cmin,cmax], cmap=cmap)
+def plot_image(image_data, cmin=0, cmax=100, cmap='hot',axis=None, text=""):
+    f = plt.figure()
+    ax = f.add_subplot(111)
+    ax.imshow(image_data, clim=[cmin,cmax], cmap=cmap)
     if axis is not None:
         plt.axis(axis)
-    plt.xlabel('x pixel')
-    plt.ylabel('y pixel')
-    plt.tight_layout()
+    ax.set_xlabel('x pixel')
+    ax.set_ylabel('y pixel')
+    ax.text(0.1, 0.1,text,
+            horizontalalignment='center',
+            verticalalignment='center',
+            transform = ax.transAxes)
+    f.subplots_adjust(top=0.95, left=0., right=1.)
 
 def smooth_image(image):
 
@@ -98,19 +103,24 @@ def flip_image(image):
     flipped_scipy = scipy.misc.imrotate(image_data, 180, interp='nearest')
 #     flipped_numpy = np.fliplr(image_data)
     f = rotateImage(image_data, 180)
-    plot_image(image_data=image_data)
+#     plot_image(image_data=image_data)
 #     plot_image(f,cmin=None, cmax=None)
-    plot_image(flipped_data)
+#     plot_image(flipped_data)
 #     plot_image(flipped_scipy)
 #     plot_image(flipped_numpy)
     diff = np.abs(image_data-flipped_data)
     rad = find_radius(diff)+5
 #     print(rad)
     mask = diff==0
-    plot_image(ma.masked_array(diff, mask=mask),cmax=np.max(diff), cmin=0, cmap='Greys', axis=(128-rad,128+rad,128-rad,128+rad))
+    plot_image(ma.masked_array(diff, mask=mask),cmax=np.max(diff), cmin=0, cmap='Greys',
+                axis=(128-rad,128+rad,128-rad,128+rad),
+                text = str(np.round(np.sum(diff)/(2*np.sum(image_data)),2)))
+    print(np.sum(diff)/(2*np.sum(image_data)))
 
+# plot_image(smooth_image(imgs[4]))
+# flip_image(isolated_galaxies[4])
 
-# plot_image(smooth_image(imgs[5]))
-# flip_image(isolated_galaxies[5])
-# plt.show()
+for ig in isolated_galaxies:
+    flip_image(ig)
+plt.show()
 
