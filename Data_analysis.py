@@ -31,34 +31,36 @@ def plot_image(image_data, cmin=0, cmax=100, cmap='hot',axis=None, text=""):
         plt.axis(axis)
     ax.set_xlabel('x pixel')
     ax.set_ylabel('y pixel')
-    ax.text(0.1, 0.1,text,
+    ax.text(0.1, 0.05,text,
             horizontalalignment='center',
             verticalalignment='center',
             transform = ax.transAxes)
-    f.subplots_adjust(top=0.95, left=0., right=1.)
+#     f.subplots_adjust(top=0.95, left=0., right=1.)
 
 def smooth_image(image, do_sigma_clipping=True, threshold=None):
 
-    image_data = fits.open(image)[0].data
+    image_data = fits.open(image)[0].data[:,:]
     moving_avg_img = np.zeros_like(image_data)
 
-    for y in range(image_data.shape[0]):
-        for x in range(image_data.shape[1]):
-            if y<=1 or x<=1 or y>=254 or x>=254:
-                moving_avg_img[x,y]=image_data[x,y]
-            else:
+#     print(image_data.shape)
+
+    for y in range(image_data.shape[1]-1):
+        for x in range(image_data.shape[0]-1):
+            try:
                 count = 0
                 for i in range(-1,2,1):
                     for j in range(-1,2,1):
                         moving_avg_img[x,y]+=image_data[x+i,y+j]
                         count+=1
                 moving_avg_img[x,y] = moving_avg_img[x,y]/count
+            except:
+                moving_avg_img[x,y]=image_data[x,y]
 
     if(do_sigma_clipping):
         image_data_test = image_data[image_data<40]
-        mean, median, std = sigma_clipped_stats(image_data_test, sigma=3.0, iters=10)
-        print(mean,median,std, mean+std)
-        threshold = mean+std
+        mean, median, std = sigma_clipped_stats(image_data_test, sigma=3.0, iters=5)
+#         print(mean+std)
+        threshold = mean+2*std
 
     return moving_avg_img, threshold
 #     plt.show()
@@ -94,12 +96,21 @@ def determine_Asymmetry(image):
     flipped_data = image_data[::-1,::-1]
 
     diff = np.abs(image_data-flipped_data)
-    rad = find_radius(diff)+5
+    asymmetry = np.round(np.sum(diff)/(2*np.sum(image_data)),2)
+#     rad = find_radius(diff)+5
 #     print(rad)
+
+    image_data_binary = np.where(image_data!=0,1,0)
+    flipped_data_binary = np.where(flipped_data!=0,1,0)
+
+    diff_binary = np.abs(image_data_binary-flipped_data_binary)
+#     diff_binary = ma.masked_array(diff_binary, diff_binary==0)
+    plot_image(diff_binary, cmax=1, cmap='Greys', text = str(asymmetry))
+
     mask = diff==0
     plot_image(ma.masked_array(diff, mask=mask),cmax=np.max(diff), cmin=0, cmap='Greys',
-                axis=(128-rad,128+rad,128-rad,128+rad),
-                text = str(np.round(np.sum(diff)/(2*np.sum(image_data)),2)))
+                text = str(asymmetry))
+#     plot_image(image_data)
     print(np.sum(diff)/(2*np.sum(image_data)), image.split('_')[1])
 
 
@@ -110,9 +121,9 @@ if __name__ == "__main__":
     isolated_galaxies = glob.glob('Isolated_*.fits')
     print(isolated_galaxies)
 
-    plot_image(smooth_image(imgs[0])[0])
-#     for ig in isolated_galaxies:
-#         determine_Asymmetry(ig)
+#     plot_image(smooth_image(imgs[0])[0])
+    for ig in isolated_galaxies:
+        determine_Asymmetry(ig)
 
 #     for img in imgs:
 #         plot_image(smooth_image(img)[0])
