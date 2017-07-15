@@ -191,6 +191,7 @@ def label_Image(image, threshold=None):
     if threshold is None:
         pic, threshold_value = smooth_image(image)
     else:
+        print(image)
         pic, threshold_value = smooth_image(image, do_sigma_clipping=False)[0], threshold
 #     print(type(pic))
 
@@ -199,8 +200,8 @@ def label_Image(image, threshold=None):
 #     plot_image(pic)
 #     threshold_value = 15
 
-    for i in range(pic.shape[1]):
-        for j in range(pic.shape[0]):
+    for i in range(pic.shape[0]):
+        for j in range(pic.shape[1]):
             # Threshold value.
             if pic[i,j] <= threshold_value:
                 pass
@@ -303,7 +304,7 @@ def GalaxyIsolation(image):
     labels = label_Image(image)
     labels = connect_Image_labels(labels)
 
-    pic_plot = ma.masked_array(pic, labels!=labels[128,128])
+    pic_plot = ma.masked_array(pic, labels!=labels[int(labels.shape[1]/2),int(labels.shape[0]/2)])
 #     plot_image(pic_plot)
 
     test = np.where(ma.filled(morphology.erosion(pic_plot),0)!=0,1,0)
@@ -313,19 +314,38 @@ def GalaxyIsolation(image):
 #     test = morphology.dilation(test)
 
     pic_plot = ma.masked_array(pic, test==0)
+    pic_plot = ma.filled(pic_plot,0)
 
-    hdu = fits.PrimaryHDU(ma.filled(pic_plot,0))
+
+#     plot_image(pic_plot[ymin:ymax, xmin:xmax])
+
+    hdu = fits.PrimaryHDU(pic_plot)
     hdulist = fits.HDUList([hdu])
     output_name = 'Isolated_'+image
     if len(glob.glob(output_name)) != 0:
         os.remove(output_name)
-    hdulist.writeto('Isolated_'+image)
+    hdulist.writeto(output_name)
+
+#     os.system('sex -c ap_test.sex Isolated_'+img)
+#     number_of_objects = len(np.shape(np.genfromtxt('ap.txt')))
+
+#     number_of_objects = -1
+    # Change 0 -> 1 to enable skipping using sextrocator
+#     if number_of_objects != 0:
 
     labels = label_Image(output_name, threshold_value)
     labels = connect_Image_labels(labels)
 
-    pic_plot = ma.masked_array(pic, labels!=labels[128,128])
-    plot_image(pic_plot)
+    pic_plot = ma.masked_array(pic, labels!=labels[int(labels.shape[1]/2),int(labels.shape[0]/2)])
+    nonzero_coords = np.nonzero(pic_plot)
+
+    ymin = np.min(nonzero_coords[0][:])
+    ymax = np.max(nonzero_coords[0][:])
+    xmin = np.min(nonzero_coords[:][1])
+    xmax = np.max(nonzero_coords[:][1])
+
+    pic_plot = pic_plot[ymin-5:ymax+5, xmin-5:xmax+5]
+    labels = labels[ymin:ymax, xmin:xmax]
 
     hdu = fits.PrimaryHDU(ma.filled(pic_plot,0))
     hdulist = fits.HDUList([hdu])
@@ -333,6 +353,8 @@ def GalaxyIsolation(image):
     if len(glob.glob(output_name)) != 0:
         os.remove(output_name)
     hdulist.writeto('Isolated_'+image)
+
+    plot_image(pic_plot)
 
     return output_name
 
