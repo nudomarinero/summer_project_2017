@@ -3,6 +3,14 @@ Log
 
 Log of changes, to-dos and goals
 
+2017-07-18
+----------
+Binnary mask A_{180} classifier finished and speed improved.
+
+Next steps:
+* Run on 2000 galaxy sample. Output csv with values.
+* Plot relation between A_{180} and P_MG
+
 2017-07-14
 ----------
 
