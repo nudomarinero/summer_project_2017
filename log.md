@@ -3,6 +3,17 @@ Log
 
 Log of changes, to-dos and goals
 
+2017-07-24
+----------
+Preliminary version of the peak detector ready. Code divided in methods. First
+draft of the tests.
+
+Next steps:
+* Complete the docstrings of the methods.
+* Look at [sphinx](http://www.sphinx-doc.org) for the documentation.
+* Write tests.
+* Save flux values at peaks when running on the full sample.
+
 2017-07-18
 ----------
 Binnary mask A_{180} classifier finished and speed improved.
