@@ -19,8 +19,8 @@ import scipy.ndimage as ndimage
 import scipy.ndimage.filters as filters
 from utils import parallel_process
 
-img_file_dir = '/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/'
-imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/5*.fits')
+# img_file_dir = '/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/'
+# imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/5*.fits')
 
 def plot_image(image_data, cmin=0, cmax=None, cmap='hot', axis=None, text=""):
     """
@@ -257,10 +257,10 @@ def read_maxima_from_file(filename):
 
 # image_analysis(imgs[773])
 # plt.show()
-out = parallel_process(imgs[0:20], image_analysis)
-write_maxima_to_file_2('maxima_alt.txt', out)
-write_maxima_to_file('maxima.txt', out)
-write_asymetry_to_file('asymetry.txt', out)
+# out = parallel_process(imgs[0:20], image_analysis)
+# write_maxima_to_file_2('maxima_alt.txt', out)
+# write_maxima_to_file('maxima.txt', out)
+# write_asymetry_to_file('asymetry.txt', out)
 
 # read_maxima_from_file('test_maxima_file.txt')
 # print(out)
