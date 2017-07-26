@@ -169,9 +169,9 @@ def determine_asymmetry_90(image_data, plot=False):
 def image_analysis(image):
     galaxy, galaxy_name = galaxy_isolation(image)
     maxima = find_local_maximum(galaxy)
-    asymmetry_flux_180, asymmetry_binary_180 = determine_asymmetry_180(galaxy)
+    asymmetry_flux_180, asymmetry_binary_180 = determine_asymmetry_180(galaxy, plot=False)
     asymmetry_flux_90, asymmetry_binary_90 = determine_asymmetry_90(galaxy)
-    # print(maxima, asymmetry_binary, asymmetry_flux, galaxy_name)
+    # print(maxima, asymmetry_binary_180, asymmetry_flux_180, galaxy_name)
     return [galaxy_name, maxima, asymmetry_flux_180, asymmetry_binary_180, asymmetry_flux_90, asymmetry_binary_90]
 
 def write_asymetry_to_file(filename, data_to_write):
@@ -193,6 +193,14 @@ def write_maxima_to_file(filename, data_to_write):
                 out_file.write('\n|')
 
         out_file.write('\n')
+
+def write_maxima_to_file_2(filename, data_to_write):
+    out_file = open(filename, 'w')
+    out_file.write('# Galaxy_name | x | y | flux \n')
+    for dat in data_to_write:
+        for num, m in enumerate(dat[1]):
+            out_file.write(dat[0] + '|')
+            out_file.write(str(m[0]) + '|'+ str(m[1]) + '|'+ str(m[2])+'\n')
 
 def read_maxima_from_file(filename):
     with open(filename, encoding="utf-8") as file:
@@ -247,13 +255,15 @@ def read_maxima_from_file(filename):
 
     return galaxy_names, maxima_img
 
-# image_analysis(imgs[114])
+# image_analysis(imgs[773])
 # plt.show()
-# out = parallel_process(imgs[0:20], image_analysis)
-# write_maxima_to_file('test_maxima_file.txt', out)
-# write_asymetry_to_file('test_asymetry_file.txt', out)
+out = parallel_process(imgs[0:20], image_analysis)
+write_maxima_to_file_2('maxima_alt.txt', out)
+write_maxima_to_file('maxima.txt', out)
+write_asymetry_to_file('asymetry.txt', out)
 
-read_maxima_from_file('test_maxima_file.txt')
+# read_maxima_from_file('test_maxima_file.txt')
 # print(out)
 # 138, 773 interesting cases. 1910?
 
+# Draw circle around galaxies with only 1 maxima to determine how circular galaxies are? 
