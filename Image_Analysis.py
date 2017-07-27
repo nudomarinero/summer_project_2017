@@ -20,7 +20,7 @@ import scipy.ndimage.filters as filters
 from utils import parallel_process
 
 # img_file_dir = '/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/'
-# imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/5*.fits')
+imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/5*.fits')
 
 def plot_image(image_data, cmin=0, cmax=None, cmap='hot', axis=None, text=""):
     """
@@ -167,12 +167,15 @@ def determine_asymmetry_90(image_data, plot=False):
         return 'nan'
 
 def image_analysis(image):
-    galaxy, galaxy_name = galaxy_isolation(image)
-    maxima = find_local_maximum(galaxy)
-    asymmetry_flux_180, asymmetry_binary_180 = determine_asymmetry_180(galaxy, plot=False)
-    asymmetry_flux_90, asymmetry_binary_90 = determine_asymmetry_90(galaxy)
-    # print(maxima, asymmetry_binary_180, asymmetry_flux_180, galaxy_name)
-    return [galaxy_name, maxima, asymmetry_flux_180, asymmetry_binary_180, asymmetry_flux_90, asymmetry_binary_90]
+    try:
+        galaxy, galaxy_name = galaxy_isolation(image)
+        maxima = find_local_maximum(galaxy)
+        asymmetry_flux_180, asymmetry_binary_180 = determine_asymmetry_180(galaxy, plot=False)
+        asymmetry_flux_90, asymmetry_binary_90 = determine_asymmetry_90(galaxy)
+        # print(maxima, asymmetry_binary_180, asymmetry_flux_180, galaxy_name)
+        return [galaxy_name, maxima, asymmetry_flux_180, asymmetry_binary_180, asymmetry_flux_90, asymmetry_binary_90]
+    except:
+        return[image.split('/')[-1], np.array([np.nan, np.nan, np.nan]), np.nan, np.nan, np.nan, np.nan]
 
 def write_asymetry_to_file(filename, data_to_write):
     out_file = open(filename, 'w')
@@ -185,22 +188,72 @@ def write_asymetry_to_file(filename, data_to_write):
 def write_maxima_to_file(filename, data_to_write):
     out_file = open(filename, 'w')
     out_file.write('# Galaxy_name | x | y | flux \n')
-    for dat in data_to_write:
-        out_file.write(dat[0] + '|')
-        for num, m in enumerate(dat[1]):
-            out_file.write(str(m[0]) + '|'+ str(m[1]) + '|'+ str(m[2]))
-            if len(dat[1]) != 1 and num < len(dat[1])-1:
-                out_file.write('\n|')
+    print(data_to_write)
 
-        out_file.write('\n')
+    try:
+        for dat_img in data_to_write:
+            out_file.write(dat_img[0] + '|')
+            if len(data_to_write[1]) == 1:
+                for num, m in enumerate(dat_img[1]):
+                    if num < len(dat_img[1])-1:
+                        out_file.write(str(m) + '|')
+                    else:
+                        out_file.write(str(m))
+            else:
+                for dat in dat_img[1]:
+                    print(dat)
+                    for num, m in enumerate(dat):
+                        if len(dat) != 1:
+                            out_file.write('' + '|')
+                        if num < len(dat)-1:
+                            out_file.write(str(m) + '|')
+                        else:
+                            out_file.write(str(m))
+                    out_file.write('\n')
+    except:
+        out_file.write('nan|nan|nan')
+
 
 def write_maxima_to_file_2(filename, data_to_write):
     out_file = open(filename, 'w')
     out_file.write('# Galaxy_name | x | y | flux \n')
-    for dat in data_to_write:
-        for num, m in enumerate(dat[1]):
-            out_file.write(dat[0] + '|')
-            out_file.write(str(m[0]) + '|'+ str(m[1]) + '|'+ str(m[2])+'\n')
+    print(data_to_write)
+
+    try:
+        for dat_img in data_to_write:
+            if len(data_to_write[1]) == 1:
+                out_file.write(dat_img[0] + '|')
+                for num, m in enumerate(dat_img[1]):
+                    if num < len(dat_img[1])-1:
+                        out_file.write(str(m) + '|')
+                    else:
+                        out_file.write(str(m))
+            else:
+                for dat in dat_img[1]:
+                    out_file.write(dat_img[0] + '|')
+                    print(dat)
+                    for num, m in enumerate(dat):
+                        if num < len(dat)-1:
+                            out_file.write(str(m) + '|')
+                        else:
+                            out_file.write(str(m))
+                    out_file.write('\n')
+    except:
+        out_file.write('nan|nan|nan')
+        
+
+
+
+    # for dat in data_to_write:
+    #     print(dat)
+    #     for num, m in enumerate(data_to_write[1]):
+    #         out_file.write(dat[0] + '|')
+    #         print(m, 'here')
+    #         try:
+    #             out_file.write(str(m) + '|'+ str(m) + '|'+ str(m)+'\n')
+    #         except:
+    #             out_file.write(m[0] + '|'+ m[1] + '|'+ m[2]+'\n')
+
 
 def read_maxima_from_file(filename):
     with open(filename, encoding="utf-8") as file:
@@ -240,27 +293,29 @@ def read_maxima_from_file(filename):
     # for n in range(len(galaxy_names)):
     #     print(galaxy_names[n], maxima_img[n])
 
-    for img_no in range(10,20):
-        # print(maxima_img[img_no].shape)
-        try:
-            x, y = maxima_img[img_no][:,0], maxima_img[img_no][:,1]
-        except:
-            x, y = maxima_img[img_no][0], maxima_img[img_no][1]
-        data, __ = smooth_image(img_file_dir+galaxy_names[img_no], do_sigma_clipping=False)
-        plt.figure()
-        plt.imshow(data, cmap='hot')
-        # plt.autoscale(False)
-        plt.plot(x, y, 'b.')
-        plt.show()
+    # for img_no in range(10,20):
+    #     # print(maxima_img[img_no].shape)
+    #     try:
+    #         x, y = maxima_img[img_no][:,0], maxima_img[img_no][:,1]
+    #     except:
+    #         x, y = maxima_img[img_no][0], maxima_img[img_no][1]
+    #     data, __ = smooth_image(img_file_dir+galaxy_names[img_no], do_sigma_clipping=False)
+    #     plt.figure()
+    #     plt.imshow(data, cmap='hot')
+    #     # plt.autoscale(False)
+    #     plt.plot(x, y, 'b.')
+    #     plt.show()
 
     return galaxy_names, maxima_img
 
-# image_analysis(imgs[773])
+# a = image_analysis(0)
+# print(a)
 # plt.show()
 # out = parallel_process(imgs[0:20], image_analysis)
-# write_maxima_to_file_2('maxima_alt.txt', out)
-# write_maxima_to_file('maxima.txt', out)
-# write_asymetry_to_file('asymetry.txt', out)
+out = parallel_process([imgs[138], imgs[773], 'test/5636.fits'], image_analysis)
+write_maxima_to_file_2('maxima_alt.txt', out)
+write_maxima_to_file('maxima.txt', out)
+write_asymetry_to_file('asymetry.txt', out)
 
 # read_maxima_from_file('test_maxima_file.txt')
 # print(out)
