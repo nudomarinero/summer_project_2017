@@ -165,52 +165,52 @@ def determine_asymmetry_90(image_data, plot=False):
     except:
         return 'nan'
 
-def minAsymmetry(image_data, x, y):
-
-    # plot_image(image_data[127-10:127+10, 127-10:127+10])
-
-    plt.figure()
-    plt.imshow(image_data)
-    plt.autoscale(False)
-    plt.plot(x, y, 'r.')
-
+def shift_image(image_data, x, y):
     size = image_data.shape
     pad = 150
     half_pad = int(pad/2)
     new_image = np.zeros([size[1]+pad, size[0]+pad])
-    # new_image[half_pad:-half_pad, half_pad:-half_pad] = image_data
-    # plot_image(new_image)
-
-    old_center, new_center = np.array([127, 127]), np.array([x, y])
+    old_center, new_center = np.array([128, 128]), np.array([x, y])
     shift = old_center - new_center
-    print(shift)
-
     new_image[half_pad+shift[1]:-half_pad+shift[1], half_pad+shift[0]:-half_pad+shift[0]] = image_data
-    plt.figure()
-    plt.imshow(new_image, cmap='hot')
-    plt.plot(half_pad+shift[0]+x, half_pad+shift[1]+y, 'b.')
-    # plt.plot(356/2, 356/2, 'bo')
 
-    plot_image(np.abs(new_image-new_image[::-1, ::-1]))
+    return new_image
+
+def minAsymmetry(image_data):
+
+    min_asmmetry, min_x, min_y = 2, 128, 128
+    found_min = False
+    count = 0
+    for i in range(-3, 4, 1):
+        for j in range(-3, 4, 1):
+            new_image = shift_image(image_data, 128+i, 128+j)
+            asymmetry = np.sum(np.abs(new_image-new_image[::-1, ::-1]))/(2*np.sum(new_image))
+            if asymmetry < min_asmmetry:
+                min_asmmetry, min_x, min_y = copy.deepcopy(asymmetry), 128+i, 128+j
+            # print(asymmetry, 128+i, 128+j)
+            # plt.plot(128+i, 128+j, 'b.')
+    # print(min_asmmetry, min_x, min_y)
+    return(min_asmmetry)
 
 def image_analysis(image):
-    try:
+    # try:
         galaxy, galaxy_name = galaxy_isolation(image)
         maxima = find_local_maximum(galaxy)
         asymmetry_flux_180, asymmetry_binary_180 = determine_asymmetry_180(galaxy, plot=False)
         asymmetry_flux_90, asymmetry_binary_90 = determine_asymmetry_90(galaxy)
         # print(maxima, asymmetry_binary_180, asymmetry_flux_180, galaxy_name)
         # print(maxima)
-        # minAsymmetry(galaxy, 145, 70)
-        return [galaxy_name, maxima, asymmetry_flux_180, asymmetry_binary_180, asymmetry_flux_90, asymmetry_binary_90]
-    except:
-        return[image.split('/')[-1], np.array([np.nan, np.nan, np.nan]), np.nan, np.nan, np.nan, np.nan]
+        # minAsymmetry(galaxy)
+        return [galaxy_name, maxima, asymmetry_flux_180, asymmetry_binary_180,
+                asymmetry_flux_90, asymmetry_binary_90, minAsymmetry(galaxy)]
+    # except:
+        # return[image.split('/')[-1], np.array([np.nan, np.nan, np.nan]), np.nan, np.nan, np.nan, np.nan]
 
 def write_asymetry_to_file(filename, data_to_write):
     out_file = open(filename, 'w')
-    out_file.write('Galaxy_name,A_flux_180,A_binary_180,A_flux_90,A_binary_90\n')
+    out_file.write('Galaxy_name,A_flux_180,A_binary_180,A_flux_90,A_binary_90,Min_A_180\n')
     for dat in data_to_write:
-        out_file.write('{0},{2},{3},{4},{5}\n'.format(*dat))
+        out_file.write('{0},{2},{3},{4},{5},{6}\n'.format(*dat))
 
 def write_maxima_to_file(filename, data_to_write):
     out_file = open(filename, 'w')
@@ -338,13 +338,15 @@ def read_maxima_from_file(filename):
 
 if __name__ == "__main__":
     imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/5*.fits')
+    image_analysis(imgs[773])
+    # plt.show()
     # print(a)
     # plt.show()
-    out = parallel_process(imgs[0:20], image_analysis)
-    # out = parallel_process([imgs[138],  'test/5636.fits', imgs[773], imgs[241]], image_analysis)
-    write_maxima_to_file_2('maxima_alt.txt', out)
-    write_maxima_to_file('maxima.txt', out)
-    write_asymetry_to_file('asymetry.txt', out)
+    # out = parallel_process(imgs[0:20], image_analysis)
+    # out = parallel_process([imgs[138],  'test/5636.fits', imgs[773], imgs[241], imgs[345]], image_analysis)
+    # write_maxima_to_file_2('maxima_alt.txt', out)
+    # write_maxima_to_file('maxima.txt', out)
+    # write_asymetry_to_file('asymetry.txt', out)
 
     # read_maxima_from_file('test_maxima_file.txt')
     # print(out)
