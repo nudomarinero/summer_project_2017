@@ -124,12 +124,12 @@ def determine_asymmetry_180(image_data, plot=False):
     flipped_data = image_data[::-1, ::-1]
     try:
         diff = np.abs(image_data-flipped_data)
-        asymmetry = np.round(np.sum(diff)/(2*np.sum(image_data)), 2)
+        asymmetry = np.sum(diff)/(2*np.sum(image_data))
 
         image_data_binary = np.where(image_data != 0, 1, 0)
         flipped_data_binary = np.where(flipped_data != 0, 1, 0)
         diff_binary = np.abs(image_data_binary-flipped_data_binary)
-        asymmetry_binary = np.round(np.sum(diff_binary)/(2*np.sum(image_data_binary)), 2)
+        asymmetry_binary = np.sum(diff_binary)/(2*np.sum(image_data_binary))
         # diff_binary = ma.masked_array(diff_binary, diff_binary == 0)
         mask = diff == 0
         if plot:
@@ -147,12 +147,12 @@ def determine_asymmetry_90(image_data, plot=False):
 
     try:
         diff = np.abs(image_data-rotate_data_90)
-        asymmetry = np.round(np.sum(diff)/(2*np.sum(image_data)), 2)
+        asymmetry = np.sum(diff)/(2*np.sum(image_data))
 
         image_data_binary = np.where(image_data != 0, 1, 0)
         rotate_data_90_binary = np.where(rotate_data_90 != 0, 1, 0)
         diff_binary = np.abs(image_data_binary-rotate_data_90_binary)
-        asymmetry_binary = np.round(np.sum(diff_binary)/(2*np.sum(rotate_data_90_binary)), 2)
+        asymmetry_binary = np.sum(diff_binary)/(2*np.sum(rotate_data_90_binary))
         # diff_binary = ma.masked_array(diff_binary, diff_binary == 0)
         mask = diff == 0
         if plot:
@@ -166,6 +166,34 @@ def determine_asymmetry_90(image_data, plot=False):
     except:
         return 'nan'
 
+def minAsymmetry(image_data, x, y):
+
+    # plot_image(image_data[127-10:127+10, 127-10:127+10])
+
+    plt.figure()
+    plt.imshow(image_data)
+    plt.autoscale(False)
+    plt.plot(x, y, 'r.')
+
+    size = image_data.shape
+    pad = 150
+    half_pad = int(pad/2)
+    new_image = np.zeros([size[1]+pad, size[0]+pad])
+    # new_image[half_pad:-half_pad, half_pad:-half_pad] = image_data
+    # plot_image(new_image)
+
+    old_center, new_center = np.array([127, 127]), np.array([x, y])
+    shift = old_center - new_center
+    print(shift)
+
+    new_image[half_pad+shift[1]:-half_pad+shift[1], half_pad+shift[0]:-half_pad+shift[0]] = image_data
+    plt.figure()
+    plt.imshow(new_image, cmap='hot')
+    plt.plot(half_pad+shift[0]+x, half_pad+shift[1]+y, 'b.')
+    # plt.plot(356/2, 356/2, 'bo')
+
+    plot_image(np.abs(new_image-new_image[::-1, ::-1]))
+
 def image_analysis(image):
     try:
         galaxy, galaxy_name = galaxy_isolation(image)
@@ -173,73 +201,66 @@ def image_analysis(image):
         asymmetry_flux_180, asymmetry_binary_180 = determine_asymmetry_180(galaxy, plot=False)
         asymmetry_flux_90, asymmetry_binary_90 = determine_asymmetry_90(galaxy)
         # print(maxima, asymmetry_binary_180, asymmetry_flux_180, galaxy_name)
+        # print(maxima)
+        # minAsymmetry(galaxy, 145, 70)
         return [galaxy_name, maxima, asymmetry_flux_180, asymmetry_binary_180, asymmetry_flux_90, asymmetry_binary_90]
     except:
         return[image.split('/')[-1], np.array([np.nan, np.nan, np.nan]), np.nan, np.nan, np.nan, np.nan]
 
 def write_asymetry_to_file(filename, data_to_write):
     out_file = open(filename, 'w')
-    out_file.write('# Galaxy_name | A_flux_180 | A_binary_180 | A_flux_90 | A_binary_90 \n')
+    out_file.write('Galaxy_name,A_flux_180,A_binary_180,A_flux_90,A_binary_90\n')
     for dat in data_to_write:
-        # print(dat[0], dat[2], dat[3])
-        out_file.write(dat[0] + '|' + str(dat[2]) + '|' + str(dat[3]))
-        out_file.write('|' + str(dat[4]) + '|' + str(dat[5]) + '\n')
+        out_file.write('{0},{2},{3},{4},{5}\n'.format(*dat))
 
 def write_maxima_to_file(filename, data_to_write):
     out_file = open(filename, 'w')
-    out_file.write('# Galaxy_name | x | y | flux \n')
-    print(data_to_write)
-
-    try:
-        for dat_img in data_to_write:
-            out_file.write(dat_img[0] + '|')
+    out_file.write('Galaxy_name,x,y,flux\n')
+    for dat_img in data_to_write:
+        try:
+            out_file.write(dat_img[0] + ',')
             if len(data_to_write[1]) == 1:
                 for num, m in enumerate(dat_img[1]):
                     if num < len(dat_img[1])-1:
-                        out_file.write(str(m) + '|')
+                        out_file.write(str(m) + ',')
                     else:
                         out_file.write(str(m))
             else:
                 for dat in dat_img[1]:
-                    print(dat)
                     for num, m in enumerate(dat):
                         if len(dat) != 1:
-                            out_file.write('' + '|')
+                            out_file.write('' + ',')
                         if num < len(dat)-1:
-                            out_file.write(str(m) + '|')
+                            out_file.write(str(m) + ',')
                         else:
                             out_file.write(str(m))
                     out_file.write('\n')
-    except:
-        out_file.write('nan|nan|nan')
-
+        except:
+            out_file.write('nan,nan,nan')
 
 def write_maxima_to_file_2(filename, data_to_write):
     out_file = open(filename, 'w')
-    out_file.write('# Galaxy_name | x | y | flux \n')
-    print(data_to_write)
-
-    try:
-        for dat_img in data_to_write:
+    out_file.write('Galaxy_name,x,y,flux\n')
+    for dat_img in data_to_write:
+        try:     
             if len(data_to_write[1]) == 1:
-                out_file.write(dat_img[0] + '|')
+                out_file.write(dat_img[0] + ',')
                 for num, m in enumerate(dat_img[1]):
                     if num < len(dat_img[1])-1:
-                        out_file.write(str(m) + '|')
+                        out_file.write(str(m) + ',')
                     else:
                         out_file.write(str(m))
             else:
                 for dat in dat_img[1]:
-                    out_file.write(dat_img[0] + '|')
-                    print(dat)
+                    out_file.write(dat_img[0] + ',')
                     for num, m in enumerate(dat):
                         if num < len(dat)-1:
-                            out_file.write(str(m) + '|')
+                            out_file.write(str(m) + ',')
                         else:
                             out_file.write(str(m))
                     out_file.write('\n')
-    except:
-        out_file.write('nan|nan|nan')
+        except:
+            out_file.write('nan,nan,nan')
         
 
 
@@ -308,11 +329,16 @@ def read_maxima_from_file(filename):
 
     return galaxy_names, maxima_img
 
-# a = image_analysis(0)
+
+
+"""
+ try and implement method to minimise galaxy rotation. To rotate around different point, create larger
+ array to store image, and shift image such that the different point is the new center.
+"""
 # print(a)
 # plt.show()
-# out = parallel_process(imgs[0:20], image_analysis)
-out = parallel_process([imgs[138], imgs[773], 'test/5636.fits'], image_analysis)
+out = parallel_process(imgs[0:20], image_analysis)
+# out = parallel_process([imgs[138], imgs[773], 'test/5636.fits'], image_analysis)
 write_maxima_to_file_2('maxima_alt.txt', out)
 write_maxima_to_file('maxima.txt', out)
 write_asymetry_to_file('asymetry.txt', out)
