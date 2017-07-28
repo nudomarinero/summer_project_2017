@@ -217,11 +217,11 @@ def write_maxima_to_file(filename, data_to_write):
     out_file.write('Galaxy_name,x,y,flux\n')
     for dat_img in data_to_write:
         try:
-            out_file.write(dat_img[0] + ',')
+            out_file.write('{}'.format(dat_img[0]))
             if len(data_to_write[1]) == 1:
                 for num, m in enumerate(dat_img[1]):
                     if num < len(dat_img[1])-1:
-                        out_file.write(str(m) + ',')
+                        out_file.write('{}'.format(m))
                     else:
                         out_file.write(str(m))
             else:
@@ -230,12 +230,13 @@ def write_maxima_to_file(filename, data_to_write):
                         if len(dat) != 1:
                             out_file.write('' + ',')
                         if num < len(dat)-1:
-                            out_file.write(str(m) + ',')
+                            out_file.write('{}'.format(m))
                         else:
                             out_file.write(str(m))
                     out_file.write('\n')
         except:
-            out_file.write('nan,nan,nan')
+            out_file.write(',')
+            out_file.write('{},{},{}\n'.format(*dat_img[1]))
 
 def write_maxima_to_file_2(filename, data_to_write):
     out_file = open(filename, 'w')
@@ -259,7 +260,7 @@ def write_maxima_to_file_2(filename, data_to_write):
                             out_file.write(str(m))
                     out_file.write('\n')
         except:
-            out_file.write('nan,nan,nan')
+            out_file.write('{},{},{}\n'.format(*dat_img[1]))
         
 
 
@@ -340,7 +341,7 @@ if __name__ == "__main__":
     # print(a)
     # plt.show()
     out = parallel_process(imgs[0:20], image_analysis)
-    # # out = parallel_process([imgs[138], imgs[773], 'test/5636.fits'], image_analysis)
+    # out = parallel_process([imgs[138],  'test/5636.fits', imgs[773], imgs[241]], image_analysis)
     write_maxima_to_file_2('maxima_alt.txt', out)
     write_maxima_to_file('maxima.txt', out)
     write_asymetry_to_file('asymetry.txt', out)
