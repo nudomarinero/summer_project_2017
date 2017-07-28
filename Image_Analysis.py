@@ -132,9 +132,9 @@ def determine_asymmetry_180(image_data, plot=False):
         # diff_binary = ma.masked_array(diff_binary, diff_binary == 0)
         mask = diff == 0
         if plot:
-            plot_image(diff_binary, cmax=1, cmap='Greys', text=str(asymmetry_binary))
+            plot_image(diff_binary, cmax=1, cmap='Greys', text=np.round(asymmetry_binary, 3))
             plot_image(ma.masked_array(diff, mask=mask), cmax=np.max(diff), cmin=0, cmap='Greys',
-                       text=str(asymmetry))
+                       text=np.round(asymmetry, 3))
             plot_image(image_data)
 
         return asymmetry, asymmetry_binary
@@ -176,7 +176,7 @@ def shift_image(image_data, x, y):
 
     return new_image
 
-def minAsymmetry(image_data):
+def minAsymmetry(image_data, plot=False):
 
     min_asmmetry, min_x, min_y = 2, 128, 128
     found_min = False
@@ -194,23 +194,30 @@ def minAsymmetry(image_data):
     flipped_data_binary = np.where(min_new_image[::-1, ::-1] != 0, 1, 0)
     asymmetry_binary = np.sum(np.abs(new_image_data_binary-flipped_data_binary))/(2*np.sum(new_image_data_binary))
     # print(min_asmmetry, asymmetry_binary, min_x, min_y)
-    # plot_image(np.abs(new_image_data_binary-flipped_data_binary), text=asymmetry_binary)
+    
+    if plot:
+        # print(plot)
+        diff_binary = np.abs(new_image_data_binary-flipped_data_binary)
+        plot_image(diff_binary, cmap='Greys', cmax=1, text=np.round(asymmetry_binary, 3))
+        diff = np.abs(new_image-new_image[::-1, ::-1])
+        plot_image(ma.masked_array(diff, diff==0), cmax=np.max(diff), cmap='Greys', text=np.round(min_asmmetry, 3))
+    
     return min_asmmetry, asymmetry_binary
 
 def image_analysis(image):
-    # try:
+    try:
         galaxy, galaxy_name = galaxy_isolation(image)
         maxima = find_local_maximum(galaxy)
         asymmetry_flux_180, asymmetry_binary_180 = determine_asymmetry_180(galaxy, plot=False)
         asymmetry_flux_90, asymmetry_binary_90 = determine_asymmetry_90(galaxy)
-        min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy)
+        min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy, plot=False)
+        # print(galaxy_name,)
+        # print(min_asmmetry_flux, min_asmmetry_binary)
         # print(maxima, asymmetry_binary_180, asymmetry_flux_180, galaxy_name)
-        # print(maxima)
-        # minAsymmetry(galaxy)
         return [galaxy_name, maxima, asymmetry_flux_180, asymmetry_binary_180,
                 asymmetry_flux_90, asymmetry_binary_90, min_asmmetry_flux, min_asmmetry_binary]
-    # except:
-        # return[image.split('/')[-1], np.array([np.nan, np.nan, np.nan]), np.nan, np.nan, np.nan, np.nan]
+    except:
+        return[image.split('/')[-1], np.array([np.nan, np.nan, np.nan]), np.nan, np.nan, np.nan, np.nan]
 
 def write_asymetry_to_file(filename, data_to_write):
     out_file = open(filename, 'w')
@@ -344,8 +351,9 @@ def read_maxima_from_file(filename):
 
 if __name__ == "__main__":
     imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/5*.fits')
-    for im in imgs[0:20]:
-        image_analysis(imgs[773])
+    for im in imgs[10:30]:
+        image_analysis(im)
+        plt.show()
     # plt.show()
     # print(a)
     # plt.show()
