@@ -187,10 +187,15 @@ def minAsymmetry(image_data):
             asymmetry = np.sum(np.abs(new_image-new_image[::-1, ::-1]))/(2*np.sum(new_image))
             if asymmetry < min_asmmetry:
                 min_asmmetry, min_x, min_y = copy.deepcopy(asymmetry), 128+i, 128+j
+                min_new_image = copy.deepcopy(new_image)
             # print(asymmetry, 128+i, 128+j)
             # plt.plot(128+i, 128+j, 'b.')
-    # print(min_asmmetry, min_x, min_y)
-    return(min_asmmetry)
+    new_image_data_binary = np.where(min_new_image != 0, 1, 0)
+    flipped_data_binary = np.where(min_new_image[::-1, ::-1] != 0, 1, 0)
+    asymmetry_binary = np.sum(np.abs(new_image_data_binary-flipped_data_binary))/(2*np.sum(new_image_data_binary))
+    # print(min_asmmetry, asymmetry_binary, min_x, min_y)
+    # plot_image(np.abs(new_image_data_binary-flipped_data_binary), text=asymmetry_binary)
+    return min_asmmetry, asymmetry_binary
 
 def image_analysis(image):
     # try:
@@ -198,19 +203,20 @@ def image_analysis(image):
         maxima = find_local_maximum(galaxy)
         asymmetry_flux_180, asymmetry_binary_180 = determine_asymmetry_180(galaxy, plot=False)
         asymmetry_flux_90, asymmetry_binary_90 = determine_asymmetry_90(galaxy)
+        min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy)
         # print(maxima, asymmetry_binary_180, asymmetry_flux_180, galaxy_name)
         # print(maxima)
         # minAsymmetry(galaxy)
         return [galaxy_name, maxima, asymmetry_flux_180, asymmetry_binary_180,
-                asymmetry_flux_90, asymmetry_binary_90, minAsymmetry(galaxy)]
+                asymmetry_flux_90, asymmetry_binary_90, min_asmmetry_flux, min_asmmetry_binary]
     # except:
         # return[image.split('/')[-1], np.array([np.nan, np.nan, np.nan]), np.nan, np.nan, np.nan, np.nan]
 
 def write_asymetry_to_file(filename, data_to_write):
     out_file = open(filename, 'w')
-    out_file.write('Galaxy_name,A_flux_180,A_binary_180,A_flux_90,A_binary_90,Min_A_180\n')
+    out_file.write('Galaxy_name,A_flux_180,A_binary_180,A_flux_90,A_binary_90,Min_A_flux_180,Min_A_binary_180\n')
     for dat in data_to_write:
-        out_file.write('{0},{2},{3},{4},{5},{6}\n'.format(*dat))
+        out_file.write('{0},{2},{3},{4},{5},{6}, {7}\n'.format(*dat))
 
 def write_maxima_to_file(filename, data_to_write):
     out_file = open(filename, 'w')
@@ -338,7 +344,8 @@ def read_maxima_from_file(filename):
 
 if __name__ == "__main__":
     imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/5*.fits')
-    image_analysis(imgs[773])
+    for im in imgs[0:20]:
+        image_analysis(imgs[773])
     # plt.show()
     # print(a)
     # plt.show()
