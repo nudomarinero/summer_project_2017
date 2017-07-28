@@ -20,7 +20,6 @@ import scipy.ndimage.filters as filters
 from utils import parallel_process
 
 # img_file_dir = '/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/'
-imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/5*.fits')
 
 def plot_image(image_data, cmin=0, cmax=None, cmap='hot', axis=None, text=""):
     """
@@ -335,16 +334,19 @@ def read_maxima_from_file(filename):
  try and implement method to minimise galaxy rotation. To rotate around different point, create larger
  array to store image, and shift image such that the different point is the new center.
 """
-# print(a)
-# plt.show()
-out = parallel_process(imgs[0:20], image_analysis)
-# out = parallel_process([imgs[138], imgs[773], 'test/5636.fits'], image_analysis)
-write_maxima_to_file_2('maxima_alt.txt', out)
-write_maxima_to_file('maxima.txt', out)
-write_asymetry_to_file('asymetry.txt', out)
 
-# read_maxima_from_file('test_maxima_file.txt')
-# print(out)
-# 138, 773 interesting cases. 1910?
+if __name__ == "__main__":
+    imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/5*.fits')
+    # print(a)
+    # plt.show()
+    out = parallel_process(imgs[0:20], image_analysis)
+    # # out = parallel_process([imgs[138], imgs[773], 'test/5636.fits'], image_analysis)
+    write_maxima_to_file_2('maxima_alt.txt', out)
+    write_maxima_to_file('maxima.txt', out)
+    write_asymetry_to_file('asymetry.txt', out)
 
-# Draw circle around galaxies with only 1 maxima to determine how circular galaxies are? 
+    # read_maxima_from_file('test_maxima_file.txt')
+    # print(out)
+    # 138, 773 interesting cases. 1910?
+
+    # Draw circle around galaxies with only 1 maxima to determine how circular galaxies are? 
