@@ -6,6 +6,7 @@ Created on 21 Jul 2017
 import glob
 import time
 import copy
+import traceback
 from astropy.io import fits
 from astropy.stats import sigma_clipped_stats
 import matplotlib.pyplot as plt
@@ -14,16 +15,24 @@ import numpy as np
 from skimage import morphology
 from skimage import measure
 from skimage import filters
-import pandas as pd
 import scipy.ndimage as ndimage
 import scipy.ndimage.filters as filters
 from utils import parallel_process
 
 # img_file_dir = '/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/'
+# out_file = open('neigbour_test.txt', 'w')
 
 def plot_image(image_data, cmin=0, cmax=None, cmap='hot', axis=None, text=""):
     """
     Plots a 2d figure using matplotlib's imshow function.
+
+    Args:
+        image_data (numpy array): 2d array containing the data to plot using imshow
+        cmin (float): Low value of cmin for imshow. [Optional, default=0]
+        cmax (float): High value of cmax for imshow. [Optional, default=None]
+        cmap (str): Type of colour map for imshow. [Optional, default='hot]
+        axis (list): List of the form, [xmin, xmax, ymin, ymax]. [Optional, default=None]
+        text (str): Text to write at bottom left corner of image. [Optional]
     """
     f = plt.figure()
     ax = f.add_subplot(111)
@@ -38,7 +47,16 @@ def plot_image(image_data, cmin=0, cmax=None, cmap='hot', axis=None, text=""):
             transform=ax.transAxes)
 
 def smooth_image(image, do_sigma_clipping=True, threshold=None):
+    """
+    Decreases the noise and boosts bright regions by performing a 3x3 running average on the image.
 
+    Args:
+        image (str): The name of the image.
+        do_sigma_clipping (bool) [Optional]: If False, will not calculate a value of threshold
+        from the image and will return the default/user threshold (None).
+        threshold (float) [Optional]: If do_sigma_clipping=False, this parameter can be used to
+        return an user defined threshold.
+    """
     #pylint: disable=maybe-no-member
     image_data = fits.open(image)[0].data
     moving_avg_img = np.zeros_like(image_data)
@@ -63,6 +81,15 @@ def smooth_image(image, do_sigma_clipping=True, threshold=None):
     return moving_avg_img, threshold
 
 def galaxy_isolation(image):
+    """
+    Isolates the galaxy from the foreground and background objects in the image.
+
+    Args:
+        image (str): The name of the galaxy.
+
+    Returns:
+        Output: An image with only the galaxy and the name of the galaxy.
+    """
 
     pic, threshold_value = smooth_image(image)
     im = copy.deepcopy(pic)
@@ -90,6 +117,16 @@ def galaxy_isolation(image):
     return ma.filled(pic_plot, 0), image_name
 
 def find_local_maximum(data):
+    """
+    Finds the location and the flux of all maxima in the image.
+
+    Args:
+        data (numpy array): 2d array that stores the data of the image.
+
+    Returns:
+        Output: An array containing arrays that store the x, y coordinate of the maxima and the
+        flux at that location.
+    """
     neighborhood_size = 20
     threshold = np.average(data[data > 0])
 
@@ -117,8 +154,17 @@ def find_local_maximum(data):
 
 def determine_asymmetry_180(image_data, plot=False):
     """
-    Determines the asymmetry coeffection by rotating the image 180 degrees and comparing it to the 
-    original image.
+    Determines the asymmetry coeffection by rotating the image 180 degrees around the center of
+    the image (pixel [128, 128]) and comparing it to the original image.
+
+    Args:
+        image_data (numpy array): 2d array containing the data of the image used to find the
+        asymmetry values.
+        plot (bool): Optional parameter, will plot figures showing the flux and binary asymmetry
+        if True.
+
+    Return:
+        Output: The values of the flux and binary asymmetry.
     """
     flipped_data = image_data[::-1, ::-1]
     try:
@@ -142,6 +188,19 @@ def determine_asymmetry_180(image_data, plot=False):
         return 'nan'
 
 def determine_asymmetry_90(image_data, plot=False):
+    """
+    Determines the asymmetry coeffection by rotating the image 90 degrees around the center of
+    the image (pixel [128, 128]) and comparing it to the original image.
+
+    Args:
+        image_data (numpy array): 2d array containing the data of the image used to find the
+        asymmetry values.
+        plot (bool): Optional parameter, will plot figures showing the flux and binary asymmetry
+        if True.
+
+    Return:
+        Output: The values of the flux and binary asymmetry.
+    """
     rotate_data_90 = np.rot90(image_data)
 
     try:
@@ -155,9 +214,9 @@ def determine_asymmetry_90(image_data, plot=False):
         # diff_binary = ma.masked_array(diff_binary, diff_binary == 0)
         mask = diff == 0
         if plot:
-            plot_image(diff_binary, cmax=1, cmap='Greys', text = str(asymmetry_binary))
-            plot_image(ma.masked_array(diff, mask=mask),cmax=np.max(diff), cmin=0, cmap='Greys',
-                        text = str(asymmetry))
+            plot_image(diff_binary, cmax=1, cmap='Greys', text=str(asymmetry_binary))
+            plot_image(ma.masked_array(diff, mask=mask), cmax=np.max(diff), cmin=0, cmap='Greys',
+                       text=str(asymmetry))
             plot_image(image_data)
             plot_image(rotate_data_90)
 
@@ -166,6 +225,17 @@ def determine_asymmetry_90(image_data, plot=False):
         return 'nan'
 
 def shift_image(image_data, x, y):
+    """
+    Re-centers the image onto the given coordinates, x and y.
+
+    Args:
+        image_data (numpy array): 2d array containing the data that will be re-centered.
+        x (int): The x coordinate in image_data to center on.
+        y (int): The y coordinate in image_data to center on.
+
+    Returns:
+        Output: 2d array of image_data with the x and y coordinate now at the center.
+    """
     size = image_data.shape
     pad = 150
     half_pad = int(pad/2)
@@ -176,56 +246,102 @@ def shift_image(image_data, x, y):
 
     return new_image
 
-def minAsymmetry(image_data, plot=False):
+def minAsymmetry(image_data, plot=False, size=3):
+    """
+    Calculates the minimum value asymmetry of the image by choosing the center of rotation
+    pixels neighbouring the center (128, 128).
 
-    min_asmmetry, min_x, min_y = 2, 128, 128
-    found_min = False
-    count = 0
-    for i in range(-3, 4, 1):
-        for j in range(-3, 4, 1):
+    Args:
+        image_data (numpy array): 2d array containing the data of the image.
+        plot (bool): Optional parameter, will plot figures showing the flux and binary asymmetry
+        if True.
+        size (int): Optional parameter that determines how many pixels are used in the asymmetry
+        calculation. A size of 3 will contain use the pixels with value 128±3 in all directions.
+
+    Returns:
+        Output: The minimum flux and binary asymmetry
+
+    """
+    min_asmmetry = 2
+    for i in range(-size, size+1, 1):
+        for j in range(-size, size+1, 1):
             new_image = shift_image(image_data, 128+i, 128+j)
             asymmetry = np.sum(np.abs(new_image-new_image[::-1, ::-1]))/(2*np.sum(new_image))
             if asymmetry < min_asmmetry:
                 min_asmmetry, min_x, min_y = copy.deepcopy(asymmetry), 128+i, 128+j
                 min_new_image = copy.deepcopy(new_image)
-            # print(asymmetry, 128+i, 128+j)
             # plt.plot(128+i, 128+j, 'b.')
     new_image_data_binary = np.where(min_new_image != 0, 1, 0)
     flipped_data_binary = np.where(min_new_image[::-1, ::-1] != 0, 1, 0)
-    asymmetry_binary = np.sum(np.abs(new_image_data_binary-flipped_data_binary))/(2*np.sum(new_image_data_binary))
-    # print(min_asmmetry, asymmetry_binary, min_x, min_y)
-    
+    min_asymmetry_binary = np.sum(np.abs(new_image_data_binary-flipped_data_binary))/(2*np.sum(new_image_data_binary))
+    # print('{}, {}, {}, {}'.format(min_asmmetry, min_asymmetry_binary, min_x-128, min_y-128))
+    # out_file.write('{}, {}, {}, {}\n'.format(min_asmmetry, asymmetry_binary, min_x-128, min_y-128))
+
     if plot:
         # print(plot)
         diff_binary = np.abs(new_image_data_binary-flipped_data_binary)
-        plot_image(diff_binary, cmap='Greys', cmax=1, text=np.round(asymmetry_binary, 3))
+        plot_image(diff_binary, cmap='Greys', cmax=1, text=np.round(min_asymmetry_binary, 3))
         diff = np.abs(new_image-new_image[::-1, ::-1])
-        plot_image(ma.masked_array(diff, diff==0), cmax=np.max(diff), cmap='Greys', text=np.round(min_asmmetry, 3))
-    
-    return min_asmmetry, asymmetry_binary
+        plot_image(ma.masked_array(diff, diff == 0),
+                   cmax=np.max(diff), cmap='Greys', text=np.round(min_asmmetry, 3))
+
+    return min_asmmetry, min_asymmetry_binary
 
 def image_analysis(image):
+    """
+    Analysis of the image to give the number of maxima in the galaxy and it's asymmetry values.
+
+    Args:
+        image (str): The name of the image
+
+    Returns:
+        Output: An array containing the name of the image, the maximas of the image (stored in
+        an array), the flux and binary asymmetry under a 180 and 90 degree rotation at the center
+        of the image, and the minimum value of the flux and binary asymmetry under a 180 degree
+        rotation.
+
+    Note:
+        The array containing the maxima is stored as [[x1, y1, flux_1], [x2, y2, flux_2], ...]
+        where x, y are ints and flux is a float.
+
+    """
     try:
         galaxy, galaxy_name = galaxy_isolation(image)
         maxima = find_local_maximum(galaxy)
         asymmetry_flux_180, asymmetry_binary_180 = determine_asymmetry_180(galaxy, plot=False)
         asymmetry_flux_90, asymmetry_binary_90 = determine_asymmetry_90(galaxy)
         min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy, plot=False)
-        # print(galaxy_name,)
-        # print(min_asmmetry_flux, min_asmmetry_binary)
-        # print(maxima, asymmetry_binary_180, asymmetry_flux_180, galaxy_name)
+        # print(galaxy_name, end=' ')
+        # print(maxima)
         return [galaxy_name, maxima, asymmetry_flux_180, asymmetry_binary_180,
                 asymmetry_flux_90, asymmetry_binary_90, min_asmmetry_flux, min_asmmetry_binary]
-    except:
-        return[image.split('/')[-1], np.array([np.nan, np.nan, np.nan]), np.nan, np.nan, np.nan, np.nan]
+    except Exception as err:
+        # traceback.print_exc()
+        print(err)
+        return [image.split('/')[-1], np.array([np.nan, np.nan, np.nan]),
+                np.nan, np.nan, np.nan, np.nan]
 
 def write_asymetry_to_file(filename, data_to_write):
+    """
+    Writes the various asymmetry values calculated from image_analysis to a file.
+
+    Args:
+        filename (str): The name of the file.
+        data_to_write (list): The data written to the file. The data is the output from image_analysis.
+    """
     out_file = open(filename, 'w')
     out_file.write('Galaxy_name,A_flux_180,A_binary_180,A_flux_90,A_binary_90,Min_A_flux_180,Min_A_binary_180\n')
     for dat in data_to_write:
-        out_file.write('{0},{2},{3},{4},{5},{6}, {7}\n'.format(*dat))
+        out_file.write('{0},{2},{3},{4},{5},{6},{7}\n'.format(*dat))
 
 def write_maxima_to_file(filename, data_to_write):
+    """
+    Writes the location and flux of each maxima in the image.
+
+    Args:
+        filename (str): The name of the file.
+        data_to_write (list): The data written to the file. The data is the output from image_analysis.
+    """
     out_file = open(filename, 'w')
     out_file.write('Galaxy_name,x,y,flux\n')
     for dat_img in data_to_write:
@@ -252,10 +368,18 @@ def write_maxima_to_file(filename, data_to_write):
             out_file.write('{},{},{}\n'.format(*dat_img[1]))
 
 def write_maxima_to_file_2(filename, data_to_write):
+    """
+    Writes the location and flux of each maxima in the image.
+
+    Args:
+        filename (str): The name of the file.
+        data_to_write (list): The data written to the file. The data is the output from
+        image_analysis.
+    """
     out_file = open(filename, 'w')
     out_file.write('Galaxy_name,x,y,flux\n')
     for dat_img in data_to_write:
-        try:     
+        try:
             if len(data_to_write[1]) == 1:
                 out_file.write(dat_img[0] + ',')
                 for num, m in enumerate(dat_img[1]):
@@ -274,7 +398,7 @@ def write_maxima_to_file_2(filename, data_to_write):
                     out_file.write('\n')
         except:
             out_file.write('{},{},{}\n'.format(*dat_img[1]))
-        
+
 
 
 
@@ -344,15 +468,13 @@ def read_maxima_from_file(filename):
 
 
 
-"""
- try and implement method to minimise galaxy rotation. To rotate around different point, create larger
- array to store image, and shift image such that the different point is the new center.
-"""
+
 
 if __name__ == "__main__":
     imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/5*.fits')
-    for im in imgs[10:30]:
-        image_analysis(im)
+    for num_img, img in enumerate(imgs[0:6]):
+        image_analysis(img)
+        print('Image '+str(num_img+1)+' processed.')
         plt.show()
     # plt.show()
     # print(a)
@@ -367,4 +489,4 @@ if __name__ == "__main__":
     # print(out)
     # 138, 773 interesting cases. 1910?
 
-    # Draw circle around galaxies with only 1 maxima to determine how circular galaxies are? 
+    # Draw circle around galaxies with only 1 maxima to determine how circular galaxies are?
