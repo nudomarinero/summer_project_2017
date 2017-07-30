@@ -18,10 +18,16 @@ from skimage import morphology
 from skimage import measure
 from skimage import filters
 
+class count():
+    def __init__(self):
+        self.count = 0
+
 plt.rcParams['animation.ffmpeg_path'] = '/usr/local/Cellar/ffmpeg/3.3.3/bin/ffmpeg'
 
 imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/5*.fits')
 print(imgs[0].split('/')[8])
+
+count = count()
 
 fig = plt.figure()
 ims = []
@@ -66,9 +72,8 @@ def label_neighbours(data, threshold, cmax=300):
 #     plot_image(data, cmax=None)
     labels = np.zeros_like(data)
     # fig = plt.figure()
-    count = 0
     im = plt.imshow(labels, clim=[0, np.max(labels)])
-    plt.savefig('Output_images/test'+str(count)+'.png')
+    plt.savefig('Output_images/test'+str(count.count)+'.png')
     im.set_array(labels)
     label_count = 0
     # threshold = 1
@@ -95,23 +100,26 @@ def label_neighbours(data, threshold, cmax=300):
                             label_count += 1
                             labels[indices[0]:indices[1],indices[2]:indices[3]] = np.where(neighbours>=threshold,label_count,0)
                             im = plt.imshow(labels, clim=[0, cmax], cmap='hot')
-                            count+=1
-                            plt.savefig('Output_images/test'+str(count)+'.png')
+                            print(count.count)
+                            count.count+=1
+                            plt.savefig('Output_images/test'+str(count.count)+'.png')
                             # im.set_array(labels)
                         else:
                             min_label = np.min(nearest_neighbours_labels[nearest_neighbours_labels>0])
                             labels[indices[0]:indices[1],indices[2]:indices[3]] = np.where(neighbours>=threshold,min_label,0)
                             im = plt.imshow(labels, clim=[0, cmax], cmap='hot')
-                            count+=1
-                            plt.savefig('Output_images/test'+str(count)+'.png')
+                            print(count.count)
+                            count.count+=1
+                            plt.savefig('Output_images/test'+str(count.count)+'.png')
                             # im.set_array(labels)
                             ims.append([im]) 
 
     # print(np.max(labels))
     for i in range(50):
         im = plt.imshow(labels, clim=[0, cmax], cmap='hot')
-        count+=1
-        plt.savefig('Output_images/test'+str(count)+'.png')
+        print(count.count)
+        count.count+=1
+        plt.savefig('Output_images/test'+str(count.count)+'.png')
         ims.append([im]) 
     # im.set_array(labels)
     # print(len(ims))
@@ -125,8 +133,7 @@ def label_neighbours(data, threshold, cmax=300):
 
 def connect_Image_labels(labels, cmax=20):
     all_labels_connected = False
-
-    count = 0
+    count_l = 0
     while not all_labels_connected:
         labels_copy = copy.deepcopy(labels)
         l = labels[128,128]
@@ -165,7 +172,7 @@ def connect_Image_labels(labels, cmax=20):
                 connected_labels.extend(np.unique(n))
             connected_labels = np.unique(np.array(connected_labels))
 
-            if len(connected_labels)==2 or count >= 10:
+            if len(connected_labels)==2 or count_l >= 10:
                 all_labels_connected = True
 
             connected_labels = connected_labels[connected_labels!=l]
@@ -177,8 +184,11 @@ def connect_Image_labels(labels, cmax=20):
         labels = labels_copy
         for i in range(50):
             im = plt.imshow(labels, clim=[0, cmax], cmap='hot')
+            print(count.count)
+            count.count+=1
+            plt.savefig('Output_images/test'+str(count.count)+'.png')
             ims.append([im])
-        count += 1
+        count_l += 1
     # plot_image(labels)
     # print(len(ims))
     return labels_copy
@@ -209,28 +219,43 @@ def labelling_animation(image):
     labels = np.where(ma.filled(morphology.erosion(labels),0)!=0,1,0)
     for i in range(50):
         im = plt.imshow(labels, cmap='hot')
+        print(count.count)
+        count.count+=1
+        plt.savefig('Output_images/test'+str(count.count)+'.png')
         ims.append([im]) 
 
     label_plot = ma.masked_array(labels, labels!=labels[int(labels.shape[1]/2),int(labels.shape[0]/2)])
     for i in range(50):
         im = plt.imshow(labels, cmap='hot')
+        print(count.count)
+        count.count+=1
+        plt.savefig('Output_images/test'+str(count.count)+'.png')
         ims.append([im]) 
 
     labels_erode = np.where(ma.filled(morphology.erosion(label_plot),0)!=0,1,0)
     for i in range(50):
         im = plt.imshow(labels_erode, cmap='hot')
+        print(count.count)
+        count.count+=1
+        plt.savefig('Output_images/test'+str(count.count)+'.png')
         ims.append([im]) 
 
     for i in range(2):
         labels_erode = np.where(ma.filled(morphology.erosion(labels_erode),0)!=0,1,0)
         for i in range(50):
             im = plt.imshow(labels_erode, cmap='hot')
+            print(count.count)
+            count.count+=1
+            plt.savefig('Output_images/test'+str(count.count)+'.png')
             ims.append([im])
 
     label_plot = ma.masked_array(label_plot, labels_erode==0)
     label_plot = ma.filled(label_plot,0)
     for i in range(50):
         im = plt.imshow(label_plot, cmap='hot')
+        print(count.count)
+        count.count+=1
+        plt.savefig('Output_images/test'+str(count.count)+'.png')
         ims.append([im])
 
     labels = label_neighbours(label_plot, 1, cmax=20)
@@ -241,20 +266,26 @@ def labelling_animation(image):
 
     for i in range(150):
         im = plt.imshow(labels, cmap='hot')
+        print(count.count)
+        count.count+=1
+        plt.savefig('Output_images/test'+str(count.count)+'.png')
         ims.append([im])
     for i in range(50):
         im = plt.imshow(image, cmap='hot')
+        print(count.count)
+        count.count+=1
+        plt.savefig('Output_images/test'+str(count.count)+'.png')
         ims.append([im])
 
-    ani = animation.ArtistAnimation(fig, ims, interval=20, blit=True,
-    repeat_delay=3000, repeat=False)
+    # ani = animation.ArtistAnimation(fig, ims, interval=20, blit=True,
+    # repeat_delay=3000, repeat=False)
 
     # print(len(ims))
     # print('saving')
     # ani.save('labelling_image_2.mp4')
     # print('saved')
 
-    plt.show()
+    # plt.show()
 
 
 
