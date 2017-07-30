@@ -103,6 +103,7 @@ def label_neighbours(data, threshold, cmax=300):
                             print(count.count)
                             count.count+=1
                             plt.savefig('Output_images/test'+str(count.count)+'.png')
+                            plt.cla()
                             # im.set_array(labels)
                         else:
                             min_label = np.min(nearest_neighbours_labels[nearest_neighbours_labels>0])
@@ -111,6 +112,7 @@ def label_neighbours(data, threshold, cmax=300):
                             print(count.count)
                             count.count+=1
                             plt.savefig('Output_images/test'+str(count.count)+'.png')
+                            plt.cla()
                             # im.set_array(labels)
                             ims.append([im]) 
 
@@ -120,6 +122,7 @@ def label_neighbours(data, threshold, cmax=300):
         print(count.count)
         count.count+=1
         plt.savefig('Output_images/test'+str(count.count)+'.png')
+        plt.cla()
         ims.append([im]) 
     # im.set_array(labels)
     # print(len(ims))
@@ -187,6 +190,7 @@ def connect_Image_labels(labels, cmax=20):
             print(count.count)
             count.count+=1
             plt.savefig('Output_images/test'+str(count.count)+'.png')
+            plt.cla()
             ims.append([im])
         count_l += 1
     # plot_image(labels)
@@ -222,6 +226,7 @@ def labelling_animation(image):
         print(count.count)
         count.count+=1
         plt.savefig('Output_images/test'+str(count.count)+'.png')
+        plt.cla()
         ims.append([im]) 
 
     label_plot = ma.masked_array(labels, labels!=labels[int(labels.shape[1]/2),int(labels.shape[0]/2)])
@@ -230,6 +235,7 @@ def labelling_animation(image):
         print(count.count)
         count.count+=1
         plt.savefig('Output_images/test'+str(count.count)+'.png')
+        plt.cla()
         ims.append([im]) 
 
     labels_erode = np.where(ma.filled(morphology.erosion(label_plot),0)!=0,1,0)
@@ -238,6 +244,7 @@ def labelling_animation(image):
         print(count.count)
         count.count+=1
         plt.savefig('Output_images/test'+str(count.count)+'.png')
+        plt.cla()
         ims.append([im]) 
 
     for i in range(2):
@@ -247,6 +254,7 @@ def labelling_animation(image):
             print(count.count)
             count.count+=1
             plt.savefig('Output_images/test'+str(count.count)+'.png')
+            plt.cla()
             ims.append([im])
 
     label_plot = ma.masked_array(label_plot, labels_erode==0)
@@ -256,6 +264,7 @@ def labelling_animation(image):
         print(count.count)
         count.count+=1
         plt.savefig('Output_images/test'+str(count.count)+'.png')
+        plt.cla()
         ims.append([im])
 
     labels = label_neighbours(label_plot, 1, cmax=20)
@@ -269,12 +278,14 @@ def labelling_animation(image):
         print(count.count)
         count.count+=1
         plt.savefig('Output_images/test'+str(count.count)+'.png')
+        plt.cla()
         ims.append([im])
     for i in range(50):
         im = plt.imshow(image, cmap='hot')
         print(count.count)
         count.count+=1
         plt.savefig('Output_images/test'+str(count.count)+'.png')
+        plt.cla()
         ims.append([im])
 
     # ani = animation.ArtistAnimation(fig, ims, interval=20, blit=True,
