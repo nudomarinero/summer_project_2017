@@ -3,7 +3,7 @@ Created on 15 Jul 2017
 
 @author: Sahl
 '''
-from Data_analysis import smooth_image, plot_image, determine_Asymmetry
+from Image_Analysis import smooth_image, plot_image
 from astropy.io import fits
 import glob
 import numpy as np
@@ -68,25 +68,22 @@ def get_neighbours(data, row, column):
 def get_pixel_value(data, row, column):
     return data[row,column]
 
-def label_neighbours(data, threshold, cmax=300):
-#     plot_image(data, cmax=None)
-    labels = np.zeros_like(data)
-    # fig = plt.figure()
-    im = plt.imshow(labels, clim=[0, np.max(labels)])
-    plt.savefig('Output_images/test'+str(count.count)+'.png')
-    im.set_array(labels)
-    label_count = 0
-    # threshold = 1
-    ims.append([im])
+def label_neighbours(data, threshold, cmax=800, save_animations=False):
 
+    labels = np.zeros_like(data)
+    if save_animations:
+        im = plt.imshow(labels, clim=[0, np.max(labels)], cmap='hot')
+        plt.savefig('Output_images/test'+str(count.count)+'.png')
+        count.count += 1
+        ims.append([im])
+        plt.cla()
+
+    label_count = 0
     for row in range(0, data.shape[1]):
         for column in range(0, data.shape[0]):
-            # if row == column:
-            #     print(row, column)
             if get_pixel_value(data, row, column) < threshold:
                 pass
             else:
-#                 print(row, column, get_neighbours(data, row, column)[0])
                 neighbours, indices = get_neighbours(data, row, column)
 
                 if label_count == 0:
@@ -101,40 +98,28 @@ def label_neighbours(data, threshold, cmax=300):
                             labels[indices[0]:indices[1],indices[2]:indices[3]] = np.where(neighbours>=threshold,label_count,0)
                             im = plt.imshow(labels, clim=[0, cmax], cmap='hot')
                             print(count.count)
-                            count.count+=1
                             plt.savefig('Output_images/test'+str(count.count)+'.png')
+                            count.count+=1                            
                             plt.cla()
-                            # im.set_array(labels)
+                            ims.append([im])
                         else:
                             min_label = np.min(nearest_neighbours_labels[nearest_neighbours_labels>0])
                             labels[indices[0]:indices[1],indices[2]:indices[3]] = np.where(neighbours>=threshold,min_label,0)
-                            im = plt.imshow(labels, clim=[0, cmax], cmap='hot')
-                            print(count.count)
-                            count.count+=1
-                            plt.savefig('Output_images/test'+str(count.count)+'.png')
-                            plt.cla()
-                            # im.set_array(labels)
-                            ims.append([im]) 
+                            # if save_animations:
+                            #     im = plt.imshow(labels, clim=[0, cmax], cmap='hot')
+                            #     print(count.count)
+                            #     plt.savefig('Output_images/test'+str(count.count)+'.png')
+                            #     count.count+=1
+                            #     ims.append([im]) 
+                            #     plt.cla()
 
     # print(np.max(labels))
-    for i in range(50):
-        im = plt.imshow(labels, clim=[0, cmax], cmap='hot')
-        print(count.count)
-        count.count+=1
-        plt.savefig('Output_images/test'+str(count.count)+'.png')
-        plt.cla()
-        ims.append([im]) 
-    # im.set_array(labels)
-    # print(len(ims))
-    # print(np.max(labels))
-    # plt.figure()
-    # plt.imshow(labels, clim=[0, 300], cmap='hot')
-    # plt.figure()
-    # plt.imshow(data, clim=[0, np.max(data)], cmap='hot')
-    # plt.show()
+    # time.sleep(10)
+    if save_animations:
+        repeat_frame(labels)
     return labels
 
-def connect_Image_labels(labels, cmax=20):
+def connect_Image_labels(labels, cmax=20, save_animations=False):
     all_labels_connected = False
     count_l = 0
     while not all_labels_connected:
@@ -185,13 +170,8 @@ def connect_Image_labels(labels, cmax=20):
                 labels_copy[labels_copy == c] = l
 
         labels = labels_copy
-        for i in range(50):
-            im = plt.imshow(labels, clim=[0, cmax], cmap='hot')
-            print(count.count)
-            count.count+=1
-            plt.savefig('Output_images/test'+str(count.count)+'.png')
-            plt.cla()
-            ims.append([im])
+        if save_animations:
+            repeat_frame(labels)
         count_l += 1
     # plot_image(labels)
     # print(len(ims))
@@ -216,87 +196,56 @@ def galaxy_isolation(data, output_name, threshold_value):
 
     return pic_plot
 
-def labelling_animation(image):
-    image, threshold = smooth_image(image)
-    labels = label_neighbours(image, threshold, cmax=300)
-    labels = connect_Image_labels(labels)
-    labels = np.where(ma.filled(morphology.erosion(labels),0)!=0,1,0)
-    for i in range(50):
-        im = plt.imshow(labels, cmap='hot')
+def repeat_frame(image_data, no_of_repetitions=50):
+    for i in range(no_of_repetitions):
+        im = plt.imshow(image_data, cmap='hot')
         print(count.count)
-        count.count+=1
         plt.savefig('Output_images/test'+str(count.count)+'.png')
-        plt.cla()
+        count.count += 1
         ims.append([im]) 
+        plt.cla()
+
+
+def labelling_animation(image):
+    image_data, threshold = smooth_image(image)
+    repeat_frame(image_data, 200)
+
+    labels = label_neighbours(image_data, threshold, cmax=800, save_animations=True)
+    labels = connect_Image_labels(labels, save_animations=True)
+    labels = np.where(ma.filled(morphology.erosion(labels),0)!=0,1,0)
+    repeat_frame(labels)
 
     label_plot = ma.masked_array(labels, labels!=labels[int(labels.shape[1]/2),int(labels.shape[0]/2)])
-    for i in range(50):
-        im = plt.imshow(labels, cmap='hot')
-        print(count.count)
-        count.count+=1
-        plt.savefig('Output_images/test'+str(count.count)+'.png')
-        plt.cla()
-        ims.append([im]) 
-
     labels_erode = np.where(ma.filled(morphology.erosion(label_plot),0)!=0,1,0)
-    for i in range(50):
-        im = plt.imshow(labels_erode, cmap='hot')
-        print(count.count)
-        count.count+=1
-        plt.savefig('Output_images/test'+str(count.count)+'.png')
-        plt.cla()
-        ims.append([im]) 
+    repeat_frame(labels_erode)
 
     for i in range(2):
         labels_erode = np.where(ma.filled(morphology.erosion(labels_erode),0)!=0,1,0)
-        for i in range(50):
-            im = plt.imshow(labels_erode, cmap='hot')
-            print(count.count)
-            count.count+=1
-            plt.savefig('Output_images/test'+str(count.count)+'.png')
-            plt.cla()
-            ims.append([im])
+        repeat_frame(labels_erode)
 
     label_plot = ma.masked_array(label_plot, labels_erode==0)
     label_plot = ma.filled(label_plot,0)
-    for i in range(50):
-        im = plt.imshow(label_plot, cmap='hot')
-        print(count.count)
-        count.count+=1
-        plt.savefig('Output_images/test'+str(count.count)+'.png')
-        plt.cla()
-        ims.append([im])
+    repeat_frame(label_plot)
 
-    labels = label_neighbours(label_plot, 1, cmax=20)
-    labels = connect_Image_labels(labels)
+    labels = label_neighbours(label_plot, 1, cmax=20, save_animations=True)
+    labels = connect_Image_labels(labels, save_animations=True)
 
-    image[labels!=labels[int(labels.shape[1]/2),int(labels.shape[0]/2)]] = 0
+    image_data[labels!=labels[int(labels.shape[1]/2),int(labels.shape[0]/2)]] = 0
     labels[labels!=labels[int(labels.shape[1]/2),int(labels.shape[0]/2)]] = 0
 
-    for i in range(150):
-        im = plt.imshow(labels, cmap='hot')
-        print(count.count)
-        count.count+=1
-        plt.savefig('Output_images/test'+str(count.count)+'.png')
-        plt.cla()
-        ims.append([im])
-    for i in range(50):
-        im = plt.imshow(image, cmap='hot')
-        print(count.count)
-        count.count+=1
-        plt.savefig('Output_images/test'+str(count.count)+'.png')
-        plt.cla()
-        ims.append([im])
+    repeat_frame(labels)
+    repeat_frame(image_data)
 
-    # ani = animation.ArtistAnimation(fig, ims, interval=20, blit=True,
-    # repeat_delay=3000, repeat=False)
+
+    ani = animation.ArtistAnimation(fig, ims, interval=20, blit=True,
+    repeat_delay=3000, repeat=True)
 
     # print(len(ims))
     # print('saving')
     # ani.save('labelling_image_2.mp4')
     # print('saved')
 
-    # plt.show()
+    plt.show()
 
 
 
@@ -308,7 +257,7 @@ def labelling_animation(image):
 
 
 
-k = 74
+k = 773
 
 labelling_animation(imgs[k])
 isolated_galaxies = glob.glob('test_Isolated_*.fits')
