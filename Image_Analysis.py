@@ -6,6 +6,7 @@ Created on 21 Jul 2017
 import glob
 import time
 import copy
+import os
 import traceback
 from astropy.io import fits
 from astropy.stats import sigma_clipped_stats
@@ -21,6 +22,8 @@ from utils import parallel_process
 
 # img_file_dir = '/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/'
 # out_file = open('neigbour_test.txt', 'w')
+
+# Type 'sphinx-apidoc -f -o source/ ../' to create documentation.
 
 def plot_image(image_data, cmin=0, cmax=None, cmap='hot', axis=None, text=""):
     """
@@ -78,9 +81,10 @@ def smooth_image(image, do_sigma_clipping=True, threshold=None):
                 moving_avg_img[x, y] = image_data[x, y]
 
     if do_sigma_clipping:
-        image_data_test = image_data[image_data < 40]
-        mean, median, std = sigma_clipped_stats(image_data_test, sigma=3.0, iters=5)
+        # image_data_test = image_data[image_data < 40]
+        mean, median, std = sigma_clipped_stats(image_data, sigma=3.0, iters=5)
         threshold = mean+1*std
+        # print(threshold)
 
     return moving_avg_img, threshold
 
@@ -487,10 +491,12 @@ def read_maxima_from_file(filename):
 
 if __name__ == "__main__":
     imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/5*.fits')
-    for num_img, img in enumerate(imgs[0:6]):
-        image_analysis(img)
-        print('Image '+str(num_img+1)+' processed.')
-        plt.show()
+    image_analysis(imgs[74])
+    plt.show()
+    # for num_img, img in enumerate(imgs[0:6]):
+    #     image_analysis(img)
+    #     print('Image '+str(num_img+1)+' processed.')
+    #     plt.show()
     # plt.show()
     # print(a)
     # plt.show()
