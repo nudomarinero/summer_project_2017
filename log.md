@@ -3,6 +3,21 @@ Log
 
 Log of changes, to-dos and goals
 
+2017-08-01
+----------
+The new algorithm that minimises the asymmetry looking around the central peak
+of the image is working OK. We find some clearly wrong high values for images 
+that contain text (they come from failed SQL queries). The galaxies with high
+values of the asymmetry (above about 0.8) are typicaly produced by intruding 
+bringht stars in the image.
+
+Next steps:
+* Create set of test images with high asymmetries with stars and genuine.
+* Use additional data and data from the detected peaks to separate the wrong
+ assymetries.
+* Consider testing the goodness of fit to a Gaussian to the possible stars.
+* Presentation.
+
 2017-07-24
 ----------
 Preliminary version of the peak detector ready. Code divided in methods. First
