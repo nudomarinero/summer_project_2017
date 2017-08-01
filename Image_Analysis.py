@@ -7,6 +7,7 @@ import glob
 import time
 import copy
 import os
+import warnings
 import traceback
 from astropy.io import fits
 from astropy.stats import sigma_clipped_stats
@@ -302,6 +303,37 @@ def minAsymmetry(image_data, plot=False, size=3):
 
     return min_asmmetry, min_asymmetry_binary
 
+def detect_star(galaxy):
+    galaxy_compressed = ma.masked_array(galaxy, galaxy == 0).compressed()
+    detection = False
+    bins = np.min(np.array([int(len(galaxy_compressed)/40), 50], dtype='int'))
+    plt.figure()
+    counts, bins, bars = plt.hist(galaxy_compressed[galaxy_compressed > np.average(galaxy_compressed)],
+                                  bins)
+    for c in range(len(counts)):
+        if counts[c] > 0:
+            if c >= 10:
+                average_local_counts = np.average(counts[c-10:c])
+                # print(np.average(counts[c-10:c]), counts[c])
+                if average_local_counts > 4:
+                    if counts[c] > 2.*average_local_counts:
+                        # print(np.average(counts[c-10:c]), counts[c])
+                        # print(True)
+                        detection = True
+                        break
+            else:
+                average_local_counts = np.average(counts[c-10:c])
+                # print(np.average(counts[0:10]), counts[c])
+                if average_local_counts > 4:
+                    if counts[c] > 2.*average_local_counts:
+                        # print(np.average(counts[0:c]), counts[c])
+                        # print('Diffraction Spikes detected.')
+                        detection = True
+                        break
+    # print(detection)
+    # plt.cla()
+    return detection
+
 def image_analysis(image):
     """
     Analysis of the image to give the number of maxima in the galaxy and it's
@@ -323,14 +355,24 @@ def image_analysis(image):
     """
     try:
         galaxy, galaxy_name = galaxy_isolation(image)
+        plot_image(galaxy)
         maxima = find_local_maximum(galaxy)
         asymmetry_flux_180, asymmetry_binary_180 = determine_asymmetry_180(galaxy, plot=False)
         asymmetry_flux_90, asymmetry_binary_90 = determine_asymmetry_90(galaxy)
         min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy, plot=False)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            if min_asmmetry_flux < 0.25 or len(maxima) == 1:
+                detect_status = False
+            else:
+                detect_status = detect_star(galaxy)  
+        print('Star in {}: {}'.format(galaxy_name, detect_status))      
+
         # print(galaxy_name, end=' ')
         # print(maxima)
         return [galaxy_name, maxima, asymmetry_flux_180, asymmetry_binary_180,
-                asymmetry_flux_90, asymmetry_binary_90, min_asmmetry_flux, min_asmmetry_binary]
+                asymmetry_flux_90, asymmetry_binary_90, min_asmmetry_flux,
+                min_asmmetry_binary, detect_status]
     except Exception as err:
         # traceback.print_exc()
         print(err)
@@ -418,19 +460,11 @@ def write_maxima_to_file_2(filename, data_to_write):
         except:
             out_file.write('{},{},{}\n'.format(*dat_img[1]))
 
-
-
-
-    # for dat in data_to_write:
-    #     print(dat)
-    #     for num, m in enumerate(data_to_write[1]):
-    #         out_file.write(dat[0] + '|')
-    #         print(m, 'here')
-    #         try:
-    #             out_file.write(str(m) + '|'+ str(m) + '|'+ str(m)+'\n')
-    #         except:
-    #             out_file.write(m[0] + '|'+ m[1] + '|'+ m[2]+'\n')
-
+def write_detections(filename, data_to_write):
+    out_file = open(filename, 'w')
+    out_file.write('Galaxy_name,Min_A_flux_180,detection\n')
+    for dat in data_to_write:
+        out_file.write('{0},{6},{8}\n'.format(*dat))
 
 def read_maxima_from_file(filename):
     with open(filename, encoding="utf-8") as file:
@@ -490,8 +524,53 @@ def read_maxima_from_file(filename):
 
 
 if __name__ == "__main__":
+
+    # 587742014909775877.fits wtf???
+
+    # 587742061619839210.fits, 587742611346948260.fits ;
+    #    high asymmetry with no diffraction spike and no spike in histogram
+
+    # 587742775637311549.fits
+    #   Diffraction spike with spike in histogram
+
+    # 587727213348520295.fits : False positive (Low A value, A<0.25) too many empty bins (Now works)
+    # 587733080273322124.fits : False positive (Low A value, A<0.25)
+    # 587734621629513866.fits : False positive (only 1 maxima)
+    # 587735696443310211.fits : False positive (Low A value, A<0.25)
+    # 587739406805762069.fits : False positive (too many bins?) (Now works)
+    # 587739720835399813.fits : False positive (Low A value, A<0.25, too many bins?)
+    # 587744728761761895.fits : False positive (too many bins) (Now works)
+    # 588007003649998869.fits : False positive (A<0.25)
+    # 588017991239794937.fits : False positive (A<0.25)
+    # 588298664655061021.fits : False positive (A=0.337)
+    # 587742629070045469.fits : False positive (A=0.37)
+    # 587739167310807244.fits : False positive (A = 0.74), too many bins? (Now works)
+    # 587736619321655535.fits : False positive (A = 0.51, too many bins) (now works)
+    # 587742572149080091.fits : False negative (A = 0.71)
+    # 587742061616758804.fits : False negative (A = 0.42, too many bins?) (Now works)
+    # 587730847428968484.fits : False negative (A = 0.53) (Now works!)
+    # 587733603734388952.fits : False negative (A = 0.62)
+    # 587742903938908310.fits : Unknown
+    # 588017977277480991.fits : Unknown
+    # 587736542026858577.fits : ? Possibly with star, but no diffraction spikes in image
+    # 587736920509645063.fits : Similar to above
+    # 588016840705704048.fits : Above
+    # 588017702403899406.fits : Above
+    # 587738196659077271.fits : Identified as having a star, not sure.
+
+    # 587737808501211272.fits : Weird image.
+    # 587739609175031857.fits : Correctly identified, but good for testing (still works)
+    # 587739811030761519.fits : Correctly identified, but good for testing
+    # 587741532766142675.fits : Correctly identified, but good for testing
+    # 587742566784106610.fits : Correctly identified, but good for testing
+    # 587739720846934450.fits : Correctly identified, but good for testing
+    # 587745243629617322.fits : Correctly identified, but good for testing
+    # 588007006334943294.fits : Correctly identified, but good for testing
+
+
     imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/5*.fits')
-    image_analysis(imgs[74])
+    image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587730847428968484.fits')
+    # image_analysis(imgs[773])
     plt.show()
     # for num_img, img in enumerate(imgs[0:6]):
     #     image_analysis(img)
