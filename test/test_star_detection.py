@@ -88,5 +88,15 @@ class MyTest(unittest.TestCase):
         output = image_analysis(file_dir+'587730847428968484.fits')
         self.assertEqual(output[-1], True)
 
+    def test_587742572149080091(self):
+        # Test image: 587730847428968484.fits . Previously a false negativs
+        output = image_analysis(file_dir+'587730847428968484.fits')
+        self.assertEqual(output[-1], True)
+
+    def test_588017111293296655(self):
+        # Test image: 588017111293296655.fits . 
+        output = image_analysis(file_dir+'588017111293296655.fits')
+        self.assertEqual(output[-1], True)
+
 if __name__ == '__main__':
    unittest.main(warnings='ignore')

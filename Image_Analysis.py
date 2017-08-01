@@ -306,18 +306,19 @@ def minAsymmetry(image_data, plot=False, size=3):
 def detect_star(galaxy):
     galaxy_compressed = ma.masked_array(galaxy, galaxy == 0).compressed()
     detection = False
-    bins = np.min(np.array([int(len(galaxy_compressed)/40), 50], dtype='int'))
-    plt.figure()
-    counts, bins, bars = plt.hist(galaxy_compressed[galaxy_compressed > np.average(galaxy_compressed)],
+    # print(int(len(galaxy_compressed)/40))
+    bins = np.min(np.array([int(len(galaxy_compressed)/40), 60], dtype='int'))
+    # plt.figure()
+    counts, bins = np.histogram(galaxy_compressed[galaxy_compressed > np.average(galaxy_compressed)],
                                   bins)
     for c in range(len(counts)):
         if counts[c] > 0:
             if c >= 10:
                 average_local_counts = np.average(counts[c-10:c])
-                # print(np.average(counts[c-10:c]), counts[c])
+                # print(counts[c]-1.75*np.average(counts[c-10:c]))
                 if average_local_counts > 4:
-                    if counts[c] > 2.*average_local_counts:
-                        # print(np.average(counts[c-10:c]), counts[c])
+                    if counts[c] > 1.75*average_local_counts:
+                        # print(1.75*np.average(counts[c-10:c]), counts[c])
                         # print(True)
                         detection = True
                         break
@@ -326,11 +327,14 @@ def detect_star(galaxy):
                 # print(np.average(counts[0:10]), counts[c])
                 if average_local_counts > 4:
                     if counts[c] > 2.*average_local_counts:
-                        # print(np.average(counts[0:c]), counts[c])
+                        # print(1.75*np.average(counts[0:c]), counts[c])
                         # print('Diffraction Spikes detected.')
                         detection = True
                         break
     # print(detection)
+    # plt.figure()
+    # plt.hist(galaxy_compressed[galaxy_compressed > np.average(galaxy_compressed)],
+    #                               bins)
     # plt.cla()
     return detection
 
@@ -355,7 +359,7 @@ def image_analysis(image):
     """
     try:
         galaxy, galaxy_name = galaxy_isolation(image)
-        plot_image(galaxy)
+        # plot_image(galaxy)
         maxima = find_local_maximum(galaxy)
         asymmetry_flux_180, asymmetry_binary_180 = determine_asymmetry_180(galaxy, plot=False)
         asymmetry_flux_90, asymmetry_binary_90 = determine_asymmetry_90(galaxy)
@@ -366,7 +370,7 @@ def image_analysis(image):
                 detect_status = False
             else:
                 detect_status = detect_star(galaxy)  
-        print('Star in {}: {}'.format(galaxy_name, detect_status))      
+        # print('Star in {}: {}'.format(galaxy_name, detect_status))      
 
         # print(galaxy_name, end=' ')
         # print(maxima)
@@ -377,7 +381,7 @@ def image_analysis(image):
         # traceback.print_exc()
         print(err)
         return [image.split('/')[-1], np.array([np.nan, np.nan, np.nan]),
-                np.nan, np.nan, np.nan, np.nan]
+                np.nan, np.nan, np.nan, np.nan, np.nan]
 
 def write_asymetry_to_file(filename, data_to_write):
     """
@@ -546,14 +550,14 @@ if __name__ == "__main__":
     # 587742629070045469.fits : False positive (A=0.37)
     # 587739167310807244.fits : False positive (A = 0.74), too many bins? (Now works)
     # 587736619321655535.fits : False positive (A = 0.51, too many bins) (now works)
-    # 587742572149080091.fits : False negative (A = 0.71)
+    # 587742572149080091.fits : False negative (A = 0.71) (Now works)
     # 587742061616758804.fits : False negative (A = 0.42, too many bins?) (Now works)
     # 587730847428968484.fits : False negative (A = 0.53) (Now works!)
     # 587733603734388952.fits : False negative (A = 0.62)
     # 587742903938908310.fits : Unknown
     # 588017977277480991.fits : Unknown
-    # 587736542026858577.fits : ? Possibly with star, but no diffraction spikes in image
-    # 587736920509645063.fits : Similar to above
+    # 587736542026858577.fits : ? Possibly with star, but no diffraction spikes in image (now identifies star)
+    # 587736920509645063.fits : Similar to above (now identifies star)
     # 588016840705704048.fits : Above
     # 588017702403899406.fits : Above
     # 587738196659077271.fits : Identified as having a star, not sure.
@@ -569,7 +573,7 @@ if __name__ == "__main__":
 
 
     imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/5*.fits')
-    image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587730847428968484.fits')
+    image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/588017111293296655.fits')
     # image_analysis(imgs[773])
     plt.show()
     # for num_img, img in enumerate(imgs[0:6]):
