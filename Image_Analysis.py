@@ -579,9 +579,10 @@ if __name__ == "__main__":
     # image_analysis(imgs[773])
     # plt.show()
     out = []
-    for bin_sizes in range(20, 200, 5):
-        for no_bins in range(3, 15):
-            for thresh_factor in np.linspace(1.5, 3, 50):
+
+    for bin_sizes in range(20, 30, 5):
+        for no_bins in range(3, 5):
+            for thresh_factor in np.linspace(1.5, 3, 2):
                 for num_img, img in enumerate(imgs):
                     out.append(image_analysis(img, bin_size=bin_sizes, n_bins_avg=no_bins, factor=thresh_factor))
                     # print('Image '+str(num_img+1)+' processed.')
