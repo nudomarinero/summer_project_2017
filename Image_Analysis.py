@@ -303,30 +303,30 @@ def minAsymmetry(image_data, plot=False, size=3):
 
     return min_asmmetry, min_asymmetry_binary
 
-def detect_star(galaxy):
+def detect_star(galaxy, binsize=50, no_of_previous_bins=10, threshold_factor=1.75):
     galaxy_compressed = ma.masked_array(galaxy, galaxy == 0).compressed()
     detection = False
     # print(int(len(galaxy_compressed)/40))
-    bins = np.min(np.array([int(len(galaxy_compressed)/40), 60], dtype='int'))
+    bins = np.min(np.array([int(len(galaxy_compressed)/40), binsize], dtype='int'))
     # plt.figure()
     counts, bins = np.histogram(galaxy_compressed[galaxy_compressed > np.average(galaxy_compressed)],
                                   bins)
     for c in range(len(counts)):
         if counts[c] > 0:
-            if c >= 10:
-                average_local_counts = np.average(counts[c-10:c])
+            if c >= no_of_previous_bins:
+                average_local_counts = np.average(counts[c-no_of_previous_bins:c])
                 # print(counts[c]-1.75*np.average(counts[c-10:c]))
                 if average_local_counts > 4:
-                    if counts[c] > 1.75*average_local_counts:
+                    if counts[c] > threshold_factor*average_local_counts:
                         # print(1.75*np.average(counts[c-10:c]), counts[c])
                         # print(True)
                         detection = True
                         break
             else:
-                average_local_counts = np.average(counts[c-10:c])
+                average_local_counts = np.average(counts[c-no_of_previous_bins:c])
                 # print(np.average(counts[0:10]), counts[c])
                 if average_local_counts > 4:
-                    if counts[c] > 2.*average_local_counts:
+                    if counts[c] > threshold_factor*average_local_counts:
                         # print(1.75*np.average(counts[0:c]), counts[c])
                         # print('Diffraction Spikes detected.')
                         detection = True
@@ -338,7 +338,7 @@ def detect_star(galaxy):
     # plt.cla()
     return detection
 
-def image_analysis(image):
+def image_analysis(image, bin_size=50, n_bins_avg=10, factor=1.75):
     """
     Analysis of the image to give the number of maxima in the galaxy and it's
     asymmetry values.
@@ -369,7 +369,9 @@ def image_analysis(image):
             if min_asmmetry_flux < 0.25 or len(maxima) == 1:
                 detect_status = False
             else:
-                detect_status = detect_star(galaxy)  
+                detect_status = detect_star(galaxy, binsize=bin_size,
+                                            no_of_previous_bins=n_bins_avg,
+                                            threshold_factor=factor)  
         # print('Star in {}: {}'.format(galaxy_name, detect_status))      
 
         # print(galaxy_name, end=' ')
@@ -573,13 +575,23 @@ if __name__ == "__main__":
 
 
     imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/5*.fits')
-    image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/588017111293296655.fits')
+    # image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587733603734388952.fits')
     # image_analysis(imgs[773])
-    plt.show()
-    # for num_img, img in enumerate(imgs[0:6]):
-    #     image_analysis(img)
-    #     print('Image '+str(num_img+1)+' processed.')
-    #     plt.show()
+    # plt.show()
+    out = []
+    for bin_sizes in range(20, 200, 5):
+        for no_bins in range(3, 15):
+            for thresh_factor in np.linspace(1.5, 3, 50):
+                for num_img, img in enumerate(imgs):
+                    out.append(image_analysis(img, bin_size=bin_sizes, n_bins_avg=no_bins, factor=thresh_factor))
+                    # print('Image '+str(num_img+1)+' processed.')
+    # os.system('mkdir Detections/bin_size/'+str(50)+'/')
+                # print('')
+                write_detections('Detections/detection_{}_{}_{}.txt'.format(bin_sizes, no_bins, np.round(thresh_factor, 2)), out)
+        # plt.show()
+    os.system('git add Detections/*.txt')
+    os.system('git commit -m "different detection parameters"')
+    os.system('git push')
     # plt.show()
     # print(a)
     # plt.show()
