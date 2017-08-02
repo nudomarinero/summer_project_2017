@@ -363,22 +363,12 @@ def image_analysis(image, bin_size=50, n_bins_avg=10, factor=1.75):
         maxima = find_local_maximum(galaxy)
         asymmetry_flux_180, asymmetry_binary_180 = determine_asymmetry_180(galaxy, plot=False)
         asymmetry_flux_90, asymmetry_binary_90 = determine_asymmetry_90(galaxy)
-        min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy, plot=False)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=RuntimeWarning)
-            if min_asmmetry_flux < 0.25 or len(maxima) == 1:
-                detect_status = False
-            else:
-                detect_status = detect_star(galaxy, binsize=bin_size,
-                                            no_of_previous_bins=n_bins_avg,
-                                            threshold_factor=factor)  
-        # print('Star in {}: {}'.format(galaxy_name, detect_status))      
-
+        min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy, plot=False)  
         # print(galaxy_name, end=' ')
         # print(maxima)
         return [galaxy_name, maxima, asymmetry_flux_180, asymmetry_binary_180,
                 asymmetry_flux_90, asymmetry_binary_90, min_asmmetry_flux,
-                min_asmmetry_binary, detect_status]
+                min_asmmetry_binary, galaxy]
     except Exception as err:
         # traceback.print_exc()
         print(err)
@@ -575,24 +565,23 @@ if __name__ == "__main__":
 
 
     imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/5*.fits')
-    # image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587733603734388952.fits')
+    out =image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587733603734388952.fits')
     # image_analysis(imgs[773])
-    # plt.show()
-    out = []
 
-    for bin_sizes in range(20, 30, 5):
-        for no_bins in range(3, 5):
-            for thresh_factor in np.linspace(1.5, 3, 2):
-                for num_img, img in enumerate(imgs):
-                    out.append(image_analysis(img, bin_size=bin_sizes, n_bins_avg=no_bins, factor=thresh_factor))
-                    # print('Image '+str(num_img+1)+' processed.')
-    # os.system('mkdir Detections/bin_size/'+str(50)+'/')
-                # print('')
-                write_detections('Detections/detection_{}_{}_{}.txt'.format(bin_sizes, no_bins, np.round(thresh_factor, 2)), out)
-        # plt.show()
-    os.system('git add Detections/*.txt')
-    os.system('git commit -m "different detection parameters"')
-    os.system('git push')
+    min_asmmetry_flux, maxima, galaxy_name, galaxy = out[5], out[1], out[0], out[-1]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        if min_asmmetry_flux < 0.25 or len(maxima) == 1:
+            detect_status = False
+        else:
+            detect_status = detect_star(galaxy)  
+    print('Star in {}: {}'.format(galaxy_name, detect_status))    
+    # plt.show()
+    # out = []
+
+    # os.system('git add Detections/*.txt')
+    # os.system('git commit -m "different detection parameters"')
+    # os.system('git push')
     # plt.show()
     # print(a)
     # plt.show()
