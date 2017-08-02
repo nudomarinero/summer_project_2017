@@ -1,1 +1,0 @@
-Galaxy_name,Min_A_flux_180,detection
