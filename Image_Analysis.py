@@ -307,11 +307,12 @@ def detect_star(galaxy, binsize=50, no_of_previous_bins=10, threshold_factor=1.7
     galaxy_compressed = ma.masked_array(galaxy, galaxy == 0).compressed()
     detection = False
     # print(int(len(galaxy_compressed)/40))
-    bins = np.min(np.array([int(len(galaxy_compressed)/40), binsize], dtype='int'))
+    bins = np.min(np.array([int(len(galaxy_compressed)/50), binsize], dtype='int'))
+    print(bins)
     # plt.figure()
-    counts, bins = np.histogram(galaxy_compressed[galaxy_compressed > np.average(galaxy_compressed)],
+    counts, __ = np.histogram(galaxy_compressed[galaxy_compressed > np.average(galaxy_compressed)],
                                   bins)
-    for c in range(len(counts)):
+    for c in range(len(counts)-3):
         if counts[c] > 0:
             if c >= no_of_previous_bins:
                 average_local_counts = np.average(counts[c-no_of_previous_bins:c])
@@ -565,7 +566,7 @@ if __name__ == "__main__":
 
 
     imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/5*.fits')
-    out =image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587733603734388952.fits')
+    out =image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587736941449379858.fits')
     # image_analysis(imgs[773])
 
     min_asmmetry_flux, maxima, galaxy_name, galaxy = out[5], out[1], out[0], out[-1]
@@ -574,9 +575,9 @@ if __name__ == "__main__":
         if min_asmmetry_flux < 0.25 or len(maxima) == 1:
             detect_status = False
         else:
-            detect_status = detect_star(galaxy)  
-    print('Star in {}: {}'.format(galaxy_name, detect_status))    
-    # plt.show()
+            detect_status = detect_star(galaxy, 52, 8, 1.62)  
+    # print('Star in {}: {}'.format(galaxy_name, detect_status))    
+    plt.show()
     # out = []
 
     # os.system('git add Detections/*.txt')
