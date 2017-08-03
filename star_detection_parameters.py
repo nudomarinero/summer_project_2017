@@ -27,7 +27,7 @@ class parameters():
     def star_detect(self, output_list):
         image, galaxy = output_list[0], output_list[-1]
         detect_status = False
-        if self.get_asymmetry(image) > 0.4:
+        if self.get_asymmetry(image) > 0.25:
             detect_status = detect_star(galaxy, *self.get_params())
         return [image.split('/')[-1], self.get_asymmetry(image), detect_status]
 

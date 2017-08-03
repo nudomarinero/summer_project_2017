@@ -177,7 +177,7 @@ All images between 0.4 and 0.5 checked. All detected correctly
 All images between 0.5 and 0.7 checked. All correct, but 2 are borderline
 All images above 0.7 checked. All correct
 """
-star_analysis('Detections/52_8_1.64_front.csv', check_results=True)
-# files = glob.glob('Detections/*.csv')
-# for file in files:
-#     star_analysis(file)
+# star_analysis('Detections/52_10_1.56.csv', check_results=True)
+files = glob.glob('Detections/*.csv')
+for file in files:
+    star_analysis(file)

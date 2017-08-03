@@ -8,8 +8,8 @@ from Image_Analysis import image_analysis, write_asymetry_to_file, write_maxima_
 from utils import parallel_process
 from star_detection_parameters import parameters
 
-imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/5*.fits')
-
+# imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/5*.fits')
+imgs = glob.glob('/shome/sahlr/summer_project_2017/Data/5*.fits')
 # imgs = glob.glob('/disk1/ert/fits_images/*.fits')
 
 def write_detect_output(detect_output, filename):
@@ -25,14 +25,14 @@ write_asymetry_to_file('a_test.csv', out)
 # galaxies = out[-1]
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=RuntimeWarning)
-    for bin_sizes in range(50, 54):
-        for n_bins in range(7, 10, 1):
+    for bin_sizes in range(47, 54):
+        for n_bins in range(7, 12, 1):{
             for thresh_factor in np.linspace(1.5, 1.75, 10):
-                parameter = parameters(bin_size=bin_sizes, n_bins_avg=n_bins,
+                parameter = parameters(bin_size=52, n_bins_avg=n_bins,
                                         factor=thresh_factor, data_file='a_test.csv')
 
                 detect_output = parallel_process(out, parameter.star_detect, 3)
-                write_detect_output(detect_output, 'Detections/{}_{}_{:.2f}_front.csv'.format(*parameter.get_params()))
+                write_detect_output(detect_output, 'Detections/{}_{}_{:.2f}.csv'.format(*parameter.get_params()))}
 
 
 # write_maxima_to_file_2('auto_test_maxima_alt2.txt', out)

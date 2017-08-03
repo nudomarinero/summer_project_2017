@@ -319,8 +319,6 @@ def detect_star(galaxy, binsize=50, no_of_previous_bins=10, threshold_factor=1.7
                 # print(counts[c]-1.75*np.average(counts[c-10:c]))
                 if average_local_counts > 4:
                     if counts[c] > threshold_factor*average_local_counts:
-                        # print(1.75*np.average(counts[c-10:c]), counts[c])
-                        # print(True)
                         detection = True
                         break
             else:
@@ -328,8 +326,6 @@ def detect_star(galaxy, binsize=50, no_of_previous_bins=10, threshold_factor=1.7
                 # print(np.average(counts[0:10]), counts[c])
                 if average_local_counts > 4:
                     if counts[c] > threshold_factor*average_local_counts:
-                        # print(1.75*np.average(counts[0:c]), counts[c])
-                        # print('Diffraction Spikes detected.')
                         detection = True
                         break
     # print(detection)
@@ -566,7 +562,7 @@ if __name__ == "__main__":
 
 
     imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/5*.fits')
-    out =image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587725774533296253.fits')
+    out =image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587725590381789417.fits')
     # image_analysis(imgs[773])
 
     min_asmmetry_flux, maxima, galaxy_name, galaxy = out[5], out[1], out[0], out[-1]
@@ -576,7 +572,7 @@ if __name__ == "__main__":
             detect_status = False
         else:
             detect_status = detect_star(galaxy, 52, 8, 1.62)  
-    print('Star in {}: {}'.format(galaxy_name, detect_status))    
+    # print('Star in {}: {}'.format(galaxy_name, detect_status))    
     plt.show()
     # out = []
 
