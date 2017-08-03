@@ -134,18 +134,24 @@ def star_analysis(filename, check_results=False):
     count_0pt3 = 1
     for i in range(len(data_parameter_CHECK)):
         if data_parameter_CHECK[i, 1] > 0.4:
-            diff[i] = np.abs(data_actual_HIGH[count_HIGH, 2]-data_parameter_CHECK[i, 2])
+            index = np.where(data_parameter_CHECK[i, 0] == data_actual_HIGH[:, 0])[0][0]
+            diff[i] = np.abs(data_actual_HIGH[index, 2]-data_parameter_CHECK[i, 2])
             if check_results:
                 if diff[i] == 1:
                     print(data_parameter_CHECK[i, 0], data_parameter_CHECK[i, 2], 'HIGH',
-                          data_actual_HIGH[count_HIGH, 2])
+                          data_actual_HIGH[index, 2], data_actual_HIGH[index, 0])
+                    # plot_image(fits.open(file_dir+data_parameter_CHECK[i, 0])[0].data)
+                    # plt.title('{}: {}'.format(data_parameter_CHECK[i, 0], data_parameter_CHECK[i, 2]))
             count_HIGH += 1
         else:
-            diff[i] = np.abs(data_actual_LOW[count_LOW, 2]-data_parameter_CHECK[i, 2])
+            index = np.where(data_parameter_CHECK[i, 0] == data_actual_LOW[:, 0])[0][0]
+            diff[i] = np.abs(data_actual_LOW[index, 2]-data_parameter_CHECK[i, 2])
             if check_results:
                 if diff[i] == 1:
                     print(data_parameter_CHECK[i, 0], data_parameter_CHECK[i, 2], 'LOW',
-                        data_actual_LOW[count_LOW, 2])
+                        data_actual_LOW[index, 2], data_actual_LOW[index, 0])
+                    # plot_image(fits.open(file_dir+data_parameter_CHECK[i, 0])[0].data)
+                    # plt.title('{}: {}'.format(data_parameter_CHECK[i, 0], data_parameter_CHECK[i, 2]))
             count_LOW += 1
 
         # if 0.2 < data_parameter_CHECK[i, 1] < 0.25:
@@ -157,7 +163,7 @@ def star_analysis(filename, check_results=False):
         #     plt.title('{}: {}'.format(data_parameter_CHECK[i, 0], data_parameter_CHECK[i, 2]))
             # print(data_parameter_CHECK[i, 0], count_0pt3)
             # count_0pt3 += 1
-    # plt.show()
+    plt.show()
     # print('\n')
     # print(diff)
     print(filename.split('/')[1], np.sum(diff))
@@ -170,14 +176,14 @@ def star_analysis(filename, check_results=False):
     # diff = data_2[:,]
 # asymetry_analysis()
 
-"""
-All images between 0.25 and 0.3 checked. All but 1 is detected correctly. Another has star, but is sucessfully isolated
-All images between 0.3 and 0.4 checked. All but 1 is detected correctly
-All images between 0.4 and 0.5 checked. All detected correctly
-All images between 0.5 and 0.7 checked. All correct, but 2 are borderline
-All images above 0.7 checked. All correct
-"""
-# star_analysis('Detections/52_10_1.56.csv', check_results=True)
-files = glob.glob('Detections/*.csv')
-for file in files:
-    star_analysis(file)
+# """
+# All images between 0.25 and 0.3 checked. All but 1 is detected correctly. Another has star, but is sucessfully isolated
+# All images between 0.3 and 0.4 checked. All but 1 is detected correctly
+# All images between 0.4 and 0.5 checked. All detected correctly
+# All images between 0.5 and 0.7 checked. All correct, but 2 are borderline
+# All images above 0.7 checked. All correct
+# """
+star_analysis('Detections_new_test/52_10_1.64.csv', check_results=True)
+# files = glob.glob('Detections_new_test/*.csv')
+# for file in files:
+#     star_analysis(file)
