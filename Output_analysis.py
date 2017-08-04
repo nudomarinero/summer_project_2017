@@ -113,10 +113,6 @@ def asymetry_analysis():
     plt.show()
 
 def star_analysis(filename, check_results=False):
-    # data_4 = np.array(pd.read_csv('detection_test_4.csv'))
-    # data_3 = np.array(pd.read_csv('detection_test_3.csv'))
-    # data_2 = np.array(pd.read_csv('detection_test_2.csv'))
-    # # data_1 = np.array(pd.read_csv('detection_test.csv'))
     file_dir = ('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/')
 
     data_actual_LOW = np.array(pd.read_csv('Detections_actual_asym_low.csv'))
@@ -127,7 +123,10 @@ def star_analysis(filename, check_results=False):
     # print(data_parameter_CHECK[data_parameter_CHECK[:, 0]=='587725590381789417.fits'])
     # print('\n')
     # print(data_parameter_CHECK.shape, len(data_actual_LOW), len(data_actual_HIGH))
-    diff = np.zeros(len(data_parameter_CHECK[:,2]))
+
+    diff = np.zeros(len(data_parameter_CHECK[:, 2]))
+    diff_HIGH = np.zeros(len(data_actual_HIGH[:, 2]))
+    diff_LOW = np.zeros(len(data_actual_LOW[:, 2]))
     count_LOW = 0
     count_HIGH = 0
     count_total = 0
@@ -136,6 +135,7 @@ def star_analysis(filename, check_results=False):
         if data_parameter_CHECK[i, 1] > 0.4:
             index = np.where(data_parameter_CHECK[i, 0] == data_actual_HIGH[:, 0])[0][0]
             diff[i] = np.abs(data_actual_HIGH[index, 2]-data_parameter_CHECK[i, 2])
+            diff_HIGH[count_HIGH] = diff[i]
             if check_results:
                 if diff[i] == 1:
                     print(data_parameter_CHECK[i, 0], data_parameter_CHECK[i, 2], 'HIGH',
@@ -146,10 +146,11 @@ def star_analysis(filename, check_results=False):
         else:
             index = np.where(data_parameter_CHECK[i, 0] == data_actual_LOW[:, 0])[0][0]
             diff[i] = np.abs(data_actual_LOW[index, 2]-data_parameter_CHECK[i, 2])
+            diff_LOW[count_LOW] = diff[i]
             if check_results:
                 if diff[i] == 1:
                     print(data_parameter_CHECK[i, 0], data_parameter_CHECK[i, 2], 'LOW',
-                        data_actual_LOW[index, 2], data_actual_LOW[index, 0])
+                          data_actual_LOW[index, 2], data_actual_LOW[index, 0])
                     # plot_image(fits.open(file_dir+data_parameter_CHECK[i, 0])[0].data)
                     # plt.title('{}: {}'.format(data_parameter_CHECK[i, 0], data_parameter_CHECK[i, 2]))
             count_LOW += 1
@@ -166,14 +167,8 @@ def star_analysis(filename, check_results=False):
     plt.show()
     # print('\n')
     # print(diff)
-    print(filename.split('/')[1], np.sum(diff))
-            # print(data_1[i,0], data_1[i, 1], data_1[i, 2],
-            #       data_2[i, 2], data_3[i, 2], data_4[i, 2])
-            # plot_image(fits.open('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/'+data_1[i, 0])[0].data)
-    # plt.show()
-    # data = np.genfromtxt('detection_test.txt', delimiter=',')
-    # print(data[3:,])
-    # diff = data_2[:,]
+    print(filename.split('/')[1], np.sum(diff), np.sum(diff_HIGH), np.sum(diff_LOW))
+
 # asymetry_analysis()
 
 # """
@@ -183,7 +178,7 @@ def star_analysis(filename, check_results=False):
 # All images between 0.5 and 0.7 checked. All correct, but 2 are borderline
 # All images above 0.7 checked. All correct
 # """
-star_analysis('Detections_new_test/52_10_1.64.csv', check_results=True)
-# files = glob.glob('Detections_new_test/*.csv')
-# for file in files:
-#     star_analysis(file)
+# star_analysis('Detections/52_8_1.68.csv', check_results=True)
+files = glob.glob('Detections/*.csv')
+for file in files:
+    star_analysis(file)

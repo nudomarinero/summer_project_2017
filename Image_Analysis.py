@@ -303,7 +303,7 @@ def minAsymmetry(image_data, plot=False, size=3):
 
     return min_asmmetry, min_asymmetry_binary
 
-def detect_star(galaxy, binsize=52, no_of_previous_bins=10, threshold_factor=1.56):
+def detect_star(galaxy, binsize=52, no_of_previous_bins=8, threshold_factor=1.68):
     galaxy_compressed = ma.masked_array(galaxy, galaxy == 0).compressed()
     detection = False
     # print(int(len(galaxy_compressed)/40))
@@ -356,7 +356,7 @@ def image_analysis(image, bin_size=50, n_bins_avg=10, factor=1.75):
     """
     try:
         galaxy, galaxy_name = galaxy_isolation(image)
-        plot_image(galaxy)
+        # plot_image(galaxy)
         maxima = find_local_maximum(galaxy)
         asymmetry_flux_180, asymmetry_binary_180 = determine_asymmetry_180(galaxy, plot=False)
         asymmetry_flux_90, asymmetry_binary_90 = determine_asymmetry_90(galaxy)
@@ -560,20 +560,33 @@ if __name__ == "__main__":
     # 587745243629617322.fits : Correctly identified, but good for testing
     # 588007006334943294.fits : Correctly identified, but good for testing
 
-
+    file_dir = '/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/'
     imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/5*.fits')
-    out =image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587733603734388952.fits')
-    # image_analysis(imgs[773])
+    test_imgs = ['588013382727958540', '588013382727958540', '587739609175031857',
+                 '587727213348520295', '587742061616758804', '587736619321655535',
+                 '587739167310807244', '587733603734388952', '587739406805762069',
+                 '587734621629513866', '587744728761761895', '587742566784106610',
+                 '587730847428968484', '587742572149080091', '588017111293296655',
+                 '588007006334943294']
+    
+    # out =image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/588013382727958540.fits')
+    # # image_analysis(imgs[773])
 
-    min_asmmetry_flux, maxima, galaxy_name, galaxy = out[5], out[1], out[0], out[-1]
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=RuntimeWarning)
-        if min_asmmetry_flux < 0.25 or len(maxima) == 1:
-            detect_status = False
-        else:
-            detect_status = detect_star(galaxy)  
-    print('Star in {}: {}'.format(galaxy_name, detect_status))    
-    plt.show()
+    # min_asmmetry_flux, maxima, galaxy_name, galaxy = out[5], out[1], out[0], out[-1]
+    # with warnings.catch_warnings():
+    #     warnings.simplefilter("ignore", category=RuntimeWarning)
+    #     if min_asmmetry_flux < 0.25 or len(maxima) == 1:
+    #         detect_status = False
+    #     else:
+    #         detect_status = detect_star(galaxy)  
+    # print('Star in {}: {}'.format(galaxy_name, detect_status))    
+
+    for t_img in test_imgs:
+        galaxy, galaxy_name = galaxy_isolation(file_dir+t_img+'.fits')
+        plot_image(galaxy)
+        plt.savefig('docs/_images/Figure_'+galaxy_name.split('.')[0]+'.png')
+        plt.cla()
+    # plt.show()
     # out = []
 
     # os.system('git add Detections/*.txt')
