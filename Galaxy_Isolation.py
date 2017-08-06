@@ -3,12 +3,13 @@ Created on 15 Jul 2017
 
 @author: Sahl
 '''
-from Image_Analysis import smooth_image, plot_image
+from Image_Analysis import smooth_image, plot_image, shift_image
 from astropy.io import fits
 import glob
 import numpy as np
 import numpy.ma as ma
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import matplotlib.animation as animation
 import copy
 import os
@@ -23,13 +24,14 @@ class count():
         self.count = 0
 
 plt.rcParams['animation.ffmpeg_path'] = '/usr/local/Cellar/ffmpeg/3.3.3/bin/ffmpeg'
+plt.rc('grid', linestyle="-", color='black')
 
 imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/5*.fits')
-print(imgs[0].split('/')[8])
+# print(imgs[0].split('/')[8])
 
 count = count()
 
-fig = plt.figure()
+# fig = plt.figure()
 ims = []
 # print(len(imgs))
 pic = np.array([[1,1,0,1,1,1,0,1],
@@ -110,7 +112,7 @@ def label_neighbours(data, threshold, cmax=800, save_animations=False):
                             #     print(count.count)
                             #     plt.savefig('Output_images/test'+str(count.count)+'.png')
                             #     count.count+=1
-                            #     ims.append([im]) 
+                            #     # ims.append([im])
                             #     plt.cla()
 
     # print(np.max(labels))
@@ -202,7 +204,7 @@ def repeat_frame(image_data, no_of_repetitions=50):
         print(count.count)
         plt.savefig('Output_images/test'+str(count.count)+'.png')
         count.count += 1
-        ims.append([im]) 
+        # ims.append([im])
         plt.cla()
 
 
@@ -247,20 +249,140 @@ def labelling_animation(image):
 
     plt.show()
 
+def grid_plot():
+    x = np.arange(0, 3)
+    y = np.arange(0, 3)
+
+    fig = plt.figure()
+    ax = fig.gca()
+    ax.set_xticks(np.arange(0, 4, 1))
+    ax.set_yticks(np.arange(0, 4., 1))
+    ax.tick_params(axis='x', colors='white')
+    ax.tick_params(axis='y', colors='white')
+    plt.gca().add_patch(patches.Rectangle((0, 3), 3, -1, alpha = 0.2, color = 'red'))
+    plt.gca().add_patch(patches.Rectangle((0, 2), 1, -1, alpha = 0.2, color = 'red'))
+    plt.gca().add_patch(patches.Rectangle((2, 2), 1, -1, alpha = 0.2, color = 'red'))
+    plt.gca().add_patch(patches.Rectangle((0, 1), 3, -1, alpha = 0.2, color = 'red'))
+    plt.scatter(1.5, 1.5)
+    # plt.scatter(x, y)
+    plt.grid()
+    fig.savefig('Presentation/Grid_nearest_neighbours.png', facecolor='none')
+    plt.show()
+
+def eight_connectivity_plot():
+    fig = plt.figure()
+    ax = fig.gca()
+    ax.set_xticks(np.arange(0, 4, 1))
+    ax.set_yticks(np.arange(0, 4., 1))
+    ax.tick_params(axis='x', colors='white')
+    ax.tick_params(axis='y', colors='white')
+    plt.gca().add_patch(patches.Rectangle((0, 3), 3, -1, alpha = 0.2, color = 'red'))
+    plt.gca().add_patch(patches.Rectangle((0, 2), 1, -1, alpha = 0.2, color = 'red'))
+    plt.gca().add_patch(patches.Rectangle((2, 2), 1, -1, alpha = 0.2, color = 'red'))
+    plt.gca().add_patch(patches.Rectangle((0, 1), 3, -1, alpha = 0.2, color = 'red'))
+    plt.scatter(1.5, 1.5, c='b')
+    plt.scatter(1.5, 2.5, c='r')
+    plt.scatter(0.5, 2.5, c='r')
+    plt.scatter(0.5, 1.5, c='g')
+    plt.scatter(0.5, 0.5, c='g')
+    plt.scatter(2.5, 2.5, c='k')
+    # plt.scatter(x, y)
+    plt.grid()
+    plt.savefig('Presentation/before_labelled.png', facecolor='none')
+
+    fig = plt.figure()
+    ax = fig.gca()
+    ax.set_xticks(np.arange(0, 4, 1))
+    ax.set_yticks(np.arange(0, 4., 1))
+    ax.tick_params(axis='x', colors='white')
+    ax.tick_params(axis='y', colors='white')
+    plt.gca().add_patch(patches.Rectangle((0, 3), 3, -1, alpha = 0.2, color = 'red'))
+    plt.gca().add_patch(patches.Rectangle((0, 2), 1, -1, alpha = 0.2, color = 'red'))
+    plt.gca().add_patch(patches.Rectangle((2, 2), 1, -1, alpha = 0.2, color = 'red'))
+    plt.gca().add_patch(patches.Rectangle((0, 1), 3, -1, alpha = 0.2, color = 'red'))
+    plt.scatter(1.5, 1.5, c='r')
+    plt.scatter(1.5, 2.5, c='r')
+    plt.scatter(0.5, 2.5, c='r')
+    plt.scatter(0.5, 1.5, c='r')
+    plt.scatter(0.5, 0.5, c='r')
+    plt.scatter(2.5, 2.5, c='k')
+    # plt.scatter(x, y)
+    plt.grid()
+    plt.savefig('Presentation/after_labelled.png', facecolor='none')
+    # plt.show()
+
+eight_connectivity_plot()
+
+def effect_of_smoothing():
+    image = imgs[773]
+    image_data = fits.open(image)[0].data
+    pic, threshold_value = smooth_image(image)
+
+    fig = plt.figure()
+    ax = fig.gca()
+    plt.imshow(pic, cmap='hot')
+    ax.tick_params(axis='x', colors='white')
+    ax.set_xlabel('x pixel')
+    ax.xaxis.label.set_color('white')
+    ax.tick_params(axis='y', colors='white')
+    ax.set_ylabel('y pixel')
+    ax.yaxis.label.set_color('white')
+
+    title_obj = plt.title('After') #get the title property handler
+    plt.setp(title_obj, color='white')
+    fig.savefig('Presentation/smoothed_image.png', facecolor='none', bbox_inches='tight')
+
+    fig = plt.figure()
+    ax = fig.gca()
+    plt.imshow(image_data, cmap='hot')
+    ax.tick_params(axis='x', colors='white')
+    ax.set_xlabel('x pixel')
+    ax.xaxis.label.set_color('white')
+    ax.tick_params(axis='y', colors='white')
+    ax.set_ylabel('y pixel')
+    ax.yaxis.label.set_color('white')
+
+    title_obj = plt.title('Before') #get the title property handler
+    plt.setp(title_obj, color='white')
+    
+    fig.savefig('Presentation/original_image.png', facecolor='none', bbox_inches='tight')
+    # plot_image(image_data)
+    # plt.show()
+
+def plot_image_for_presentations(image, output_name):
+
+    image_data = fits.open(image)[0].data
+    pic, threshold_value = smooth_image(image)
+
+    fig = plt.figure()
+    ax = fig.gca()
+    plt.imshow(pic, cmap='hot')
+    ax.tick_params(axis='x', colors='white')
+    ax.set_xlabel('x pixel')
+    ax.xaxis.label.set_color('white')
+    ax.tick_params(axis='y', colors='white')
+    ax.set_ylabel('y pixel')
+    ax.yaxis.label.set_color('white')
+
+    fig.savefig('Presentation/'+output_name+'.png', facecolor='none', bbox_inches='tight')
 
 
+# image1, image2 = '587739609175031857.fits', '587734621629513866.fits'
+# plot_image_for_presentations('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587735660477743159.fits',
+#                              'detect_star_587735660477743159')
+ 
 
-
+# effect_of_smoothing()
 # label_neighbours(pic, 1)
 # plt.show()
 
 
 
 
-k = 773
+# k = 773
 
-labelling_animation(imgs[k])
-isolated_galaxies = glob.glob('test_Isolated_*.fits')
+# labelling_animation(imgs[k])
+# isolated_galaxies = glob.glob('test_Isolated_*.fits')
 
 
 
