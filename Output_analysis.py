@@ -123,7 +123,7 @@ def star_analysis(filename, check_results=False):
     # print(data_actual_LOW[data_actual_LOW[:, 0]=='587725590381789417.fits'])
     # print(data_parameter_CHECK[data_parameter_CHECK[:, 0]=='587725590381789417.fits'])
     # print('\n')
-    # print(data_parameter_CHECK.shape, len(data_actual_LOW), len(data_actual_HIGH))
+    print(data_parameter_CHECK.shape, len(data_actual_LOW), len(data_actual_HIGH))
 
     diff = np.zeros(len(data_parameter_CHECK[:, 2]))
     diff_HIGH = np.zeros(len(data_actual_HIGH[:, 2]))
@@ -337,40 +337,50 @@ def read_datah5():
     p_mg = np.array(data['P_MG'])
     names = np.array(data['OBJID'], dtype=str)
     
-    my_data = np.array(pd.read_csv('Detections_best/asymmetry_2k.csv'))
-    detections = np.array(pd.read_csv('Detections_best/52_8_1.73.csv'))
-    my_asym = my_data[:, 5]
-    my_names = my_data[:, 0]
+    my_data = pd.read_csv('Detections_best/asymmetry_50k.csv')
+    detections = pd.read_csv('Detections_best/50k_52_8_1.72.csv')
+
+    det_merged = my_data.merge(detections, on='Galaxy_name')
+    det_merged['OBJID'] = det_merged.apply(lambda x: int(x['Galaxy_name'].split('.')[0]), axis=1)
+    # det_merged = det_merged.join(objid, how='outer')
+    # print(det_merged)
+    data_merge = data.join(det_merged.set_index('OBJID'), on='OBJID', how='inner')
+    # print(data_merge)
+    # when merging with big data file, use inner/right join
+
+    plt.figure()
+    plt.plot(data_merge['P_MG'], data_merge['Min_A_flux_180_y'], '.')
+    plt.show()
     
     # n = my_names[0].split('.')[0]
     # print(np.where(n == names))
 
     # asym_plot = np.zeros_like(my_asym)
-    asym_plot = []
-    p_mg_plot = []
+    # asym_plot = []
+    # p_mg_plot = []
     
-    for count, name in enumerate(my_names):
-        if not detections[count, 2]:
-            index = np.where(name.split('.')[0] == names)[0][0]
-            asym_plot.append(my_asym[count])
-            p_mg_plot.append(p_mg[index])
-            if my_asym[count] < 0.2 and p_mg[index] != 0:
-                print(name, my_asym[count], p_mg[index])
-        # if count%100 == 0:
-        #     print(count)
-        # print(name, names[index])
+    # for count, name in enumerate(my_names):
+    #     if not detections[count, 2]:
+    #         index = np.where(name.split('.')[0] == names)[0][0]
+    #         asym_plot.append(my_asym[count])
+    #         p_mg_plot.append(p_mg[index])
+    #         if my_asym[count] < 0.2 and p_mg[index] != 0:
+    #             print(name, my_asym[count], p_mg[index])
+    #     # if count%100 == 0:
+    #     #     print(count)
+    #     # print(name, names[index])
 
-    plt.figure()
-    plt.plot(p_mg_plot, asym_plot, '.')
-    plt.xlabel('p_mg')
-    plt.ylabel('Asymmetry')
-    plt.show()
+    # plt.figure()
+    # plt.plot(p_mg_plot, asym_plot, '.')
+    # plt.xlabel('p_mg')
+    # plt.ylabel('Asymmetry')
+    # plt.show()
     
 
     
     # print(names[0:100])
 
-# read_datah5()
+read_datah5()
 # plot_roc()
 
 # roc_classification('Detections/52_8_1.68.csv')
@@ -386,7 +396,7 @@ def read_datah5():
 # """
 # star_analysis('Detections_best/53_8_1.73.csv', check_results=True)
 
-files = glob.glob('Detections_best/*_*_*.csv')
-# print(files)
-for f, file in enumerate(files):
-    star_analysis(file)
+# files = glob.glob('Detections_best_home/*_*_*.csv')
+# # print(files)
+# for f, file in enumerate(files):
+#     star_analysis(file)
