@@ -15,6 +15,6 @@ imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Da
 # imgs = glob.glob('/disk1/ert/fits_images/*.fits')
 
 out = parallel_process(imgs, image_analysis, 4)
-write_asymetry_to_file('Detections_double_erosion/asymmetry_2k.csv', out)
+write_asymetry_to_file('Detections_best/asymmetry_2k.csv', out)
 
-parallel_parameter_check(data=out, filename='Detections_double_erosion/asymmetry_2k.csv')
+parallel_parameter_check(data=out, filename='Detections_best/asymmetry_2k.csv')

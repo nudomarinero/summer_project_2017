@@ -175,6 +175,59 @@ def star_analysis(filename, check_results=False):
     print(filename.split('/')[-1], np.sum(diff), np.sum(diff_HIGH), np.sum(diff_LOW))
 
     # return [bins, bins_avg, t_factor, np.sum(diff_HIGH)]
+def read_maxima_from_file(filename):
+    with open(filename, encoding="utf-8") as file:
+        my_list = file.readlines()
+
+    maxima = []
+    galaxy_names = []
+    no_of_maxima = []
+    galaxy_count = 0
+    for num, x in enumerate(my_list):
+        if not x.startswith('#'):
+            x_split = x.strip().split(',')
+            if len(x_split[0]) > 0:
+                galaxy_names.append(x_split[0])
+                maxima.append([x_split[1], x_split[2], x_split[3]])
+                no_of_maxima.append(1)
+                galaxy_count += 1
+            else:
+                no_of_maxima[galaxy_count-1] += 1
+                maxima.append([x_split[1], x_split[2], x_split[3]])
+
+    print(galaxy_count)
+    maxima_img = []
+    count = 0
+    for n in range(len(galaxy_names)):
+        maxima_img.append([])
+        if no_of_maxima[n] == 1:
+            maxima_img[n] = maxima[count]
+            maxima_img[n] = np.array(maxima_img[n])
+            count += 1
+        else:
+            for n_max in range(no_of_maxima[n]):
+                maxima_img[n].append(maxima[count])
+                count += 1
+                if n_max == no_of_maxima[n]-1:
+                    maxima_img[n] = np.array(maxima_img[n])
+
+    # print(len(maxima_img), len(galaxy_names))
+
+    for i, j in zip(galaxy_names, no_of_maxima):
+        print(i, j)
+
+    return galaxy_names, maxima_img, no_of_maxima
+
+def asymmetry_vs_maxima():
+    data_asym = np.array(pd.read_csv('Detections_2k/asymmetry_2k.csv'))
+    __, __, data_maxima = read_maxima_from_file('maxima2.csv')
+
+    plt.figure()
+    plt.plot(data_asym[:, 5], data_maxima[1:], '.')
+    plt.show()
+
+# asymmetry_vs_maxima()
+
 
 def asymmetry_difference():
     data_s3 = np.array(pd.read_csv('Detections_2k/asymmetry_2k.csv'))
@@ -244,13 +297,15 @@ def roc_classification(filename):
     # print(len(t_positives_high), len(f_positives_high), len(tot_positives_high))
 
 def plot_roc():
-    files = glob.glob('Detections_2k_maxima_filter/*_*_*.csv')
-# print(files)
+    files = glob.glob('Detections_best/*_*_*.csv')
     t_pr_high, f_pr_high = np.zeros_like(files), np.zeros_like(files)
     t_pr_low, f_pr_low = np.zeros_like(files), np.zeros_like(files)
     t_pr_all, f_pr_all = np.zeros_like(files), np.zeros_like(files)
     for f, file in enumerate(files):
         t_pr_high[f], f_pr_high[f], t_pr_low[f], f_pr_low[f], t_pr_all[f], f_pr_all[f] = roc_classification(file)
+        print('{}: {:.4f}, {:.4f} | {:.4f}, {:.4f} | {:.4f}, {:.4f}'.format(file.split('/')[1], float(t_pr_high[f]), float(f_pr_high[f]),
+                                                float(t_pr_low[f]), float(f_pr_low[f]),
+                                                float(t_pr_all[f]), float(f_pr_all[f])))
         # star_analysis(file)
     x = np.linspace(0, 1, 100)
     y = x
@@ -274,10 +329,49 @@ def plot_roc():
     ax.set_xlim(xmin=0, xmax=1)
     ax.set_ylim(ymin=0, ymax=1)
     plt.legend()
-    fig.savefig('Presentation/roc_classification.png', facecolor='none', bbox_inches='tight')
-    plt.show()
+    # fig.savefig('Presentation/roc_classification_best.png', facecolor='none', bbox_inches='tight')
+    # plt.show()
 
-plot_roc()
+def read_datah5():
+    data = pd.read_hdf('data/data.h5')
+    p_mg = np.array(data['P_MG'])
+    names = np.array(data['OBJID'], dtype=str)
+    
+    my_data = np.array(pd.read_csv('Detections_best/asymmetry_2k.csv'))
+    detections = np.array(pd.read_csv('Detections_best/52_8_1.73.csv'))
+    my_asym = my_data[:, 5]
+    my_names = my_data[:, 0]
+    
+    # n = my_names[0].split('.')[0]
+    # print(np.where(n == names))
+
+    # asym_plot = np.zeros_like(my_asym)
+    asym_plot = []
+    p_mg_plot = []
+    
+    for count, name in enumerate(my_names):
+        if not detections[count, 2]:
+            index = np.where(name.split('.')[0] == names)[0][0]
+            asym_plot.append(my_asym[count])
+            p_mg_plot.append(p_mg[index])
+            if my_asym[count] < 0.2 and p_mg[index] != 0:
+                print(name, my_asym[count], p_mg[index])
+        # if count%100 == 0:
+        #     print(count)
+        # print(name, names[index])
+
+    plt.figure()
+    plt.plot(p_mg_plot, asym_plot, '.')
+    plt.xlabel('p_mg')
+    plt.ylabel('Asymmetry')
+    plt.show()
+    
+
+    
+    # print(names[0:100])
+
+# read_datah5()
+# plot_roc()
 
 # roc_classification('Detections/52_8_1.68.csv')
 # asymmetry_difference()
@@ -290,9 +384,9 @@ plot_roc()
 # All images between 0.5 and 0.7 checked. All correct, but 2 are borderline
 # All images above 0.7 checked. All correct
 # """
-# star_analysis('Detections_2k_maxima_filter/52_8_1.72.csv', check_results=True)
+# star_analysis('Detections_best/53_8_1.73.csv', check_results=True)
 
-# files = glob.glob('Detections_2k_maxima_filter/*_*_*.csv')
-# # print(files)
-# for f, file in enumerate(files):
-#     star_analysis(file)
+files = glob.glob('Detections_best/*_*_*.csv')
+# print(files)
+for f, file in enumerate(files):
+    star_analysis(file)

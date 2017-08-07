@@ -27,7 +27,7 @@ from utils import parallel_process
 
 # Type 'sphinx-apidoc -f -o source/ ../' to create documentation.
 
-def plot_image(image_data, cmin=0, cmax=None, cmap='hot', axis=None, text=""):
+def plot_image(image_data, cmin=0, cmax=None, cmap='hot', axis=None, text="", presentation=False, output_name=None):
     """
     Plots a 2d figure using matplotlib's imshow function.
 
@@ -41,8 +41,8 @@ def plot_image(image_data, cmin=0, cmax=None, cmap='hot', axis=None, text=""):
             [Optional, default=None]
         text (str): Text to write at bottom left corner of image. [Optional]
     """
-    f = plt.figure()
-    ax = f.add_subplot(111)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
     ax.imshow(image_data, clim=[cmin, cmax], cmap=cmap)
     if axis is not None:
         plt.axis(axis)
@@ -52,6 +52,12 @@ def plot_image(image_data, cmin=0, cmax=None, cmap='hot', axis=None, text=""):
             horizontalalignment='center',
             verticalalignment='center',
             transform=ax.transAxes)
+    if presentation:
+        ax.tick_params(axis='x', colors='white')
+        ax.xaxis.label.set_color('white')
+        ax.tick_params(axis='y', colors='white')
+        ax.yaxis.label.set_color('white')
+        fig.savefig('Presentation/'+output_name+'.png', facecolor='none', bbox_inches='tight')
 
 def smooth_image(image, do_sigma_clipping=True, threshold=None):
     """
@@ -145,20 +151,32 @@ def find_local_maximum(data):
     # plot_image(labels, cmax=None)
 
     data_max = filters.maximum_filter(data, neighborhood_size)
+    # plot_image(data_max, presentation=True, output_name='maximum_filter')
     maxima = (data == data_max)
+    # plot_image(maxima, presentation=True, output_name='maxima')
     data_min = filters.minimum_filter(data, neighborhood_size)
+    # plot_image(data_min, presentation=True, output_name='minimum_filter')
     diff = ((data_max - data_min) > threshold)
+    # plot_image(diff, presentation=False, output_name='min_max_diff')
     maxima[diff == 0] = 0
+    # plot_image(maxima, presentation=True, output_name='maxima_final')
 
     labeled, num_objects = ndimage.label(maxima)
     maxima_xy_loc = np.array(ndimage.center_of_mass(data, labeled, range(1, num_objects+1)), dtype=np.int)
     maxima_data = [[i[1], i[0], data[i[0], i[1]]] for i in maxima_xy_loc]
     # print(maxima_data)
 
-    # plt.figure()
-    # plt.imshow(data)
+    # fig = plt.figure()
+    # ax = fig.gca()
+    # plt.imshow(data, cmap='hot')
     # plt.autoscale(False)
-    # plt.plot(maxima_xy_loc[:, 1], maxima_xy_loc[:, 0], 'r.')
+    # plt.plot(maxima_xy_loc[:, 1], maxima_xy_loc[:, 0], 'b.')
+    
+    # ax.tick_params(axis='x', colors='white')
+    # ax.xaxis.label.set_color('white')
+    # ax.tick_params(axis='y', colors='white')
+    # ax.yaxis.label.set_color('white')
+    # fig.savefig('Presentation/'+'maxima_locations'+'.png', facecolor='none', bbox_inches='tight')
 
     return maxima_data
 
@@ -305,11 +323,12 @@ def minAsymmetry(image_data, plot=False, size=3):
 
     return min_asmmetry, min_asymmetry_binary
 
-def detect_star(galaxy, binsize=52, no_of_previous_bins=8, threshold_factor=1.72, plot=False):
+def detect_star(galaxy, binsize=53, no_of_previous_bins=8, threshold_factor=1.73, plot=False):
     galaxy_compressed = ma.masked_array(galaxy, galaxy == 0).compressed()
     detection = False
     # print(int(len(galaxy_compressed)/40))
-    bins = np.min(np.array([int(len(galaxy_compressed)/50), binsize], dtype='int'))
+    bins = np.min(np.array([int(len(galaxy_compressed)/70), binsize], dtype='int'))
+    # bins = 100
     # print(bins)
     # plt.figure()
     counts, edges = np.histogram(galaxy_compressed[galaxy_compressed > np.average(galaxy_compressed)],
@@ -390,7 +409,7 @@ def detect_star(galaxy, binsize=52, no_of_previous_bins=8, threshold_factor=1.72
     # plt.cla()
     return detection
 
-def image_analysis(image, bin_size=50, n_bins_avg=10, factor=1.75):
+def image_analysis(image):
     """
     Analysis of the image to give the number of maxima in the galaxy and it's
     asymmetry values.
@@ -588,11 +607,14 @@ if __name__ == "__main__":
                            '587742062171521094.fits', '588015508212220022.fits', '588016890639941781.fits',
                            '588017725480108223.fits']
 
-    out = image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/588848901006032963.fits')
+    # out = image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587744873711600007.fits')
     # print(out)
-    parameter = Parameters()
-    parameter.star_detect(out)
-    # detect_star(out[-1], plot=True)
+    # parameter = Parameters()
+    # parameter.star_detect(out)
+    out = image_analysis(imgs[773])
+    t1 = time.clock()
+    detect_star(out[-1], plot=False)
+    print(time.clock()-t1)
     # image_analysis(imgs[257])
     # image_analysis(imgs[1397])
     plt.show()
