@@ -132,7 +132,7 @@ def galaxy_isolation(image):
 
     return ma.filled(pic_plot, 0), image_name
 
-def find_local_maximum(data):
+def find_local_maximum(data, savefig=False):
     """
     Finds the location and the flux of all maxima in the image.
 
@@ -165,18 +165,20 @@ def find_local_maximum(data):
     maxima_xy_loc = np.array(ndimage.center_of_mass(data, labeled, range(1, num_objects+1)), dtype=np.int)
     maxima_data = [[i[1], i[0], data[i[0], i[1]]] for i in maxima_xy_loc]
     # print(maxima_data)
-
-    # fig = plt.figure()
-    # ax = fig.gca()
-    # plt.imshow(data, cmap='hot')
-    # plt.autoscale(False)
-    # plt.plot(maxima_xy_loc[:, 1], maxima_xy_loc[:, 0], 'b.')
-    
-    # ax.tick_params(axis='x', colors='white')
-    # ax.xaxis.label.set_color('white')
-    # ax.tick_params(axis='y', colors='white')
-    # ax.yaxis.label.set_color('white')
-    # fig.savefig('Presentation/'+'maxima_locations'+'.png', facecolor='none', bbox_inches='tight')
+    if savefig:
+        fig = plt.figure()
+        ax = fig.gca()
+        plt.imshow(data, cmap='hot')
+        plt.autoscale(False)
+        plt.plot(maxima_xy_loc[:, 1], maxima_xy_loc[:, 0], 'b.')
+        
+        ax.tick_params(axis='x', colors='white')
+        ax.xaxis.label.set_color('white')
+        ax.set_xlabel('x pixel')
+        ax.tick_params(axis='y', colors='white')
+        ax.yaxis.label.set_color('white')
+        ax.set_ylabel('y pixel')
+        fig.savefig('Presentation/'+'maxima_locations'+'.png', facecolor='none', bbox_inches='tight')
 
     return maxima_data
 
@@ -435,11 +437,16 @@ def image_analysis(image):
         asymmetry_flux_180, asymmetry_binary_180 = determine_asymmetry_180(galaxy, plot=False)
         asymmetry_flux_90, asymmetry_binary_90 = determine_asymmetry_90(galaxy)
         min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy, plot=False)  
-        # print(galaxy_name, end=' ')
-        # print(maxima)
+
+        detect_status = False
+        if len(maxima) == 1:
+            detect_status = False
+        else:
+            detect_status = detect_star(galaxy)
+
         return [galaxy_name, maxima, asymmetry_flux_180, asymmetry_binary_180,
                 asymmetry_flux_90, asymmetry_binary_90, min_asmmetry_flux,
-                min_asmmetry_binary, galaxy]
+                min_asmmetry_binary, detect_status]
     except Exception as err:
         # traceback.print_exc()
         print(err)
@@ -612,9 +619,9 @@ if __name__ == "__main__":
     # parameter = Parameters()
     # parameter.star_detect(out)
     out = image_analysis(imgs[773])
-    t1 = time.clock()
-    detect_star(out[-1], plot=False)
-    print(time.clock()-t1)
+    # t1 = time.clock()
+    # detect_star(out[-1], plot=False)
+    # print(time.clock()-t1)
     # image_analysis(imgs[257])
     # image_analysis(imgs[1397])
     plt.show()

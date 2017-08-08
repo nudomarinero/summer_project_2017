@@ -332,7 +332,7 @@ def plot_roc():
     # fig.savefig('Presentation/roc_classification_best.png', facecolor='none', bbox_inches='tight')
     # plt.show()
 
-def read_datah5():
+def read_datah5(savefig=False):
     data = pd.read_hdf('data/data.h5')
     p_mg = np.array(data['P_MG'])
     names = np.array(data['OBJID'], dtype=str)
@@ -342,42 +342,68 @@ def read_datah5():
 
     det_merged = my_data.merge(detections, on='Galaxy_name')
     det_merged['OBJID'] = det_merged.apply(lambda x: int(x['Galaxy_name'].split('.')[0]), axis=1)
-    # det_merged = det_merged.join(objid, how='outer')
-    # print(det_merged)
+
     data_merge = data.join(det_merged.set_index('OBJID'), on='OBJID', how='inner')
     # print(data_merge)
-    # when merging with big data file, use inner/right join
+    detect = np.logical_not(np.array(data_merge['detection']))
+    detect_stars = np.array(data_merge['detection'])
 
-    plt.figure()
-    plt.plot(data_merge['P_MG'], data_merge['Min_A_flux_180_y'], '.')
-    plt.show()
+    # print(np.sum(detect_op))
+    data_no_stars = data_merge[detect]
+    # print(data_no_stars)
+
+    bins_to_plot = 11
+    data_in_bins = [[] for x in range(bins_to_plot)]
+    data_in_bins[0] = data_no_stars['Min_A_flux_180_y'][data_no_stars['P_MG'] == 0]
+
+    bins = np.zeros(bins_to_plot+1)
+    bins[1:] = np.linspace(0.0001, 1.0, bins_to_plot)
+
+    print(data_merge[detect_stars])
+    data_merge[detect_stars][data_merge['Min_A_flux_180_y'] < 0.25].to_csv('stars_50k_low_asym.csv')
+
+    for count in range(1, len(bins)-1):
+        mask = (data_no_stars['P_MG'] > bins[count]) & (data_no_stars['P_MG'] < bins[count+1] )
+        data_in_bins[count] = data_no_stars['Min_A_flux_180_y'][mask]
+        # print(count, bins[count])
+
+    bin_centers = np.zeros(bins_to_plot)
+    bin_centers[0] = 0.0
+    for count in range(1, len(bins)-1):
+        bin_centers[count] = 0.5*(bins[count] + bins[count+1])
     
-    # n = my_names[0].split('.')[0]
-    # print(np.where(n == names))
+    fig = plt.figure(figsize=(9, 6))
+    ax = fig.add_subplot(111)
 
-    # asym_plot = np.zeros_like(my_asym)
-    # asym_plot = []
-    # p_mg_plot = []
-    
-    # for count, name in enumerate(my_names):
-    #     if not detections[count, 2]:
-    #         index = np.where(name.split('.')[0] == names)[0][0]
-    #         asym_plot.append(my_asym[count])
-    #         p_mg_plot.append(p_mg[index])
-    #         if my_asym[count] < 0.2 and p_mg[index] != 0:
-    #             print(name, my_asym[count], p_mg[index])
-    #     # if count%100 == 0:
-    #     #     print(count)
-    #     # print(name, names[index])
+    bp = ax.boxplot(data_in_bins, showfliers=False, showmeans=True, meanline=True, patch_artist=True)
+    for box, median, mean in zip(bp['boxes'], bp['medians'], bp['means']):
+        box.set(facecolor='#5456dc')
+        median.set(color='#00FFF3', linewidth=2)
+        mean.set(color='#F0C825', linewidth=1.75)
+    ax.set_ylabel('Asymmetry 180')
+    ax.set_xlabel('P_MG bins')
+    ax.set_xticklabels(np.round(bin_centers, 2))
 
-    # plt.figure()
-    # plt.plot(p_mg_plot, asym_plot, '.')
-    # plt.xlabel('p_mg')
-    # plt.ylabel('Asymmetry')
+    median_legend, = ax.plot([1,1], linestyle='-', color='#00FFF3')
+    mean_legend, = ax.plot([1,1], linestyle='--', color='#F0C825')
+    plt.legend((median_legend, mean_legend),('Median', 'Mean'))
+    median_legend.set_visible(False)
+    mean_legend.set_visible(False)
+
+    if savefig:
+        ax.tick_params(axis='x', colors='white')
+        ax.xaxis.label.set_color('white')
+        ax.tick_params(axis='y', colors='white')
+        ax.yaxis.label.set_color('white')
+        ax.spines['bottom'].set_color('white')
+        ax.spines['top'].set_color('white')
+        ax.spines['left'].set_color('white')
+        ax.spines['right'].set_color('white')
+
+        fig.savefig('Presentation/asymmetry_boxplot.png', facecolor='none', bbox_inches='tight')
+
+
     # plt.show()
-    
-
-    
     # print(names[0:100])
 
 read_datah5()
@@ -387,14 +413,8 @@ read_datah5()
 # asymmetry_difference()
 # asymetry_analysis()
 
-# """
-# All images between 0.25 and 0.3 checked. All but 1 is detected correctly. Another has star, but is sucessfully isolated
-# All images between 0.3 and 0.4 checked. All but 1 is detected correctly
-# All images between 0.4 and 0.5 checked. All detected correctly
-# All images between 0.5 and 0.7 checked. All correct, but 2 are borderline
-# All images above 0.7 checked. All correct
-# """
-# star_analysis('Detections_best/53_8_1.73.csv', check_results=True)
+
+# star_analysis('Detections_best/detections_2k.csv', check_results=True)
 
 # files = glob.glob('Detections_best_home/*_*_*.csv')
 # # print(files)
