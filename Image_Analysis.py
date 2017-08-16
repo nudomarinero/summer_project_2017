@@ -194,7 +194,8 @@ def determine_asymmetry_180(image_data, plot=False):
             binary asymmetry when true.
 
     Return:
-        Output: The values of the flux and binary asymmetry.
+        * The flux asymmetry under a 180 degree rotation.
+        * The binary asymmetry under a 180 degree rotation.
     """
     flipped_data = image_data[::-1, ::-1]
     try:
@@ -231,7 +232,8 @@ def determine_asymmetry_90(image_data, plot=False):
             binary asymmetry when true.
 
     Return:
-        Output: The values of the flux and binary asymmetry.
+        * The flux asymmetry under a 90 degree rotation.
+        * The binary asymmetry under a 90 degree rotation.
     """
     rotate_data_90 = np.rot90(image_data)
 
@@ -284,18 +286,21 @@ def shift_image(image_data, x, y):
 def minAsymmetry(image_data, maxima, plot=False, size=5):
     """
     Calculates the minimum value asymmetry of the image by choosing the center
-    of rotation pixels neighbouring the center (128, 128).
+    of rotation pixels neighbouring the center. The center is chosen as the 
+    maximum associated with the galaxy or as (128, 128).
 
     Args:
         image_data (numpy array): 2d array containing the data of the image.
+        maxima: The maxima of the image found from :func:`find_local_maximum`.
         plot (bool): Optional parameter, will plot figures showing the flux and
             binary asymmetry when true.
         size (int): Optional parameter that determines how many pixels are used
-            in the asymmetry calculation. A size of 3 will use the pixels with
-            value 128±3 in all directions.
+            in the asymmetry calculation. A size of 5 will search a 10x10 box
+            around the center.
 
     Returns:
-        Output: The minimum flux and binary asymmetry
+        * The minimum flux asymmetry under a 180 degree rotation.
+        * The minimum binary asymmetry under a 180 degree rotation.
 
     """
     # print(maxima)
@@ -305,11 +310,12 @@ def minAsymmetry(image_data, maxima, plot=False, size=5):
         if np.sqrt((x-128)**2+(y-128)**2) < max_distance_from_center:
             max_distance_from_center = np.sqrt((x-128)**2+(y-128)**2)
             maximum_idx = n
-
-    if max_distance_from_center < 11:
-        x_center, y_center = maxima[maximum_idx][0], maxima[maximum_idx][1]
-    else:
-        x_center, y_center = 128, 128
+    # print(max_distance_from_center, maxima)
+    # if max_distance_from_center < 11:
+    x_center, y_center = maxima[maximum_idx][0], maxima[maximum_idx][1]
+    # else:
+    #     x_center, y_center = 128, 128
+    # print(x_center, y_center)
     min_asmmetry = np.inf
     for i in range(-size, size+1, 1):
         for j in range(-size, size+1, 1):
@@ -339,6 +345,24 @@ def minAsymmetry(image_data, maxima, plot=False, size=5):
     return min_asmmetry, min_asymmetry_binary
 
 def detect_star(galaxy, binsize=53, no_of_previous_bins=8, threshold_factor=1.73, plot=False):
+    """
+    Detects whether or not there is a foreground star in the image.
+
+    Args:
+        galaxy (numpy array): An array containing the data of the isolated galaxy from
+            :func:`galaxy_isolation`.
+        binsize (int): The number of bins used for the histogram of the flux.
+            [optional]
+        no_of_previous_bins (int): Determines how many bins are used for
+            calculating the average flux. [optional]
+        threshold_factor (float): Determines how many counts are needed for a
+            spike in flux at a given bin to register as a star. [optional]
+        plot (boolean): If true, will plot the image, and the histogram of the
+            flux. [optional]
+    
+    Returns:
+        True if star is detected. False otherwise.
+    """
     galaxy_compressed = ma.masked_array(galaxy, galaxy == 0).compressed()
     detection = False
     # print(int(len(galaxy_compressed)/40))
@@ -422,6 +446,16 @@ def detect_star(galaxy, binsize=53, no_of_previous_bins=8, threshold_factor=1.73
     return detection
 
 def split_star_from_galaxy(galaxy, galaxy_name, plot=False):
+    """
+    Separates the star from the galaxy.
+
+    Args:
+        galaxy (numpy array): An array containing the data of the isolated galaxy from
+            :func:`galaxy_isolation`.
+        galaxy_name (str): The name of the galaxy.
+        plot (bool): Optional paramter, which when true will plot the galaxy
+            separated from the star.
+    """
 
     img = np.zeros_like(galaxy)
     contours = measure.find_contours(galaxy, np.average(galaxy[galaxy > 0]))
@@ -449,13 +483,25 @@ def image_analysis(image):
         image (str): The name of the image
 
     Returns:
-        Output: An array containing the name of the image, the maximas of the
-        image (stored in an array), the flux and binary asymmetry under a 180
-        and 90 degree rotation at the center of the image, and the minimum value
-        of the flux and binary asymmetry under a 180 degree rotation.
+        * **Name** (*str*) - The name of the galaxy.
+        * **Maxima** (*list*) - The location and value of flux of each maxima.
+        * **Various asymmetries**.
 
+          * **flux_180** (*float*) - The asymmetry at the center of the
+            image under 180 degree rotation.
+          * **binary_180** (*float*) - The asymmetry at the center of
+            the binary image under 180 degree rotation.
+          * **flux_90** (*float*) - The asymmetry at the center of the
+            image under 90 degree rotation.
+          * **binary_90** (*float*) - The asymmetry at the center of
+            the binary image under 90 degree rotation.
+          * **min_flux_180** (*float*) - The minimum asymmetry of the
+            image under 180 degree rotation.
+          * **min_binary_180** (*float*) - The minimum asymmetry of the
+            the binary image under 180 degree rotation.
+        * **detect_status** (*bool*) - Whether or not there is a star in the image.
     Note:
-        The array containing the maxima is stored as [[x1, y1, flux_1],
+        The list containing the maxima is stored as [[x1, y1, flux_1],
         [x2, y2, flux_2], ...] where x, y are ints and flux is a float.
 
     """
@@ -465,11 +511,9 @@ def image_analysis(image):
         asymmetry_flux_180, asymmetry_binary_180 = determine_asymmetry_180(galaxy, plot=False)
         asymmetry_flux_90, asymmetry_binary_90 = determine_asymmetry_90(galaxy)
         min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy, maxima, plot=False)  
-        # print(min_asmmetry_flux)
-        # print(min_asmmetry_flux)
         detect_status = False
-        # plot_image(galaxy)
-        # print(min_asmmetry_flux, min_asmmetry_binary)
+        # print(min_asmmetry_flux)
+
         if len(maxima) == 1:
             detect_status = False
         else:
@@ -478,8 +522,6 @@ def image_analysis(image):
                 galaxy_split = split_star_from_galaxy(galaxy, galaxy_name, plot=False)
                 min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy_split, maxima, plot=False)
                 # print(min_asmmetry_flux)
-                # plot_image(galaxy)
-                # plot_image(galaxy_split)
 
         return [galaxy_name, maxima, asymmetry_flux_180, asymmetry_binary_180,
                 asymmetry_flux_90, asymmetry_binary_90, min_asmmetry_flux,
@@ -498,7 +540,7 @@ def write_asymetry_to_file(filename, data_to_write):
     Args:
         filename (str): The name of the file.
         data_to_write (list): The data written to the file. The data is the
-            output from image_analysis.
+            output from :func:`image_analysis`.
     """
     out_file = open(filename, 'w')
     out_file.write('Galaxy_name,A_flux_180,A_binary_180,A_flux_90,A_binary_90,Min_A_flux_180,Min_A_binary_180\n')
@@ -577,58 +619,7 @@ def write_detections(filename, data_to_write):
     for dat in data_to_write:
         out_file.write('{0},{6},{8}\n'.format(*dat))
 
-def read_maxima_from_file(filename):
-    with open(filename, encoding="utf-8") as file:
-        my_list = file.readlines()
 
-    maxima = []
-    galaxy_names = []
-    no_of_maxima = []
-    galaxy_count = 0
-    for num, x in enumerate(my_list):
-        if not x.startswith('#'):
-            x_split = x.strip().split('|')
-            if len(x_split[0]) > 0:
-                galaxy_names.append(x_split[0])
-                maxima.append([x_split[1], x_split[2], x_split[3]])
-                no_of_maxima.append(1)
-                galaxy_count += 1
-            else:
-                no_of_maxima[galaxy_count-1] += 1
-                maxima.append([x_split[1], x_split[2], x_split[3]])
-
-    maxima_img = []
-    count = 0
-    for n in range(len(galaxy_names)):
-        maxima_img.append([])
-        if no_of_maxima[n] == 1:
-            maxima_img[n] = maxima[count]
-            maxima_img[n] = np.array(maxima_img[n])
-            count += 1
-        else:
-            for n_max in range(no_of_maxima[n]):
-                maxima_img[n].append(maxima[count])
-                count += 1
-                if n_max == no_of_maxima[n]-1:
-                    maxima_img[n] = np.array(maxima_img[n])
-
-    # for n in range(len(galaxy_names)):
-    #     print(galaxy_names[n], maxima_img[n])
-
-    # for img_no in range(10,20):
-    #     # print(maxima_img[img_no].shape)
-    #     try:
-    #         x, y = maxima_img[img_no][:,0], maxima_img[img_no][:,1]
-    #     except:
-    #         x, y = maxima_img[img_no][0], maxima_img[img_no][1]
-    #     data, __ = smooth_image(img_file_dir+galaxy_names[img_no], do_sigma_clipping=False)
-    #     plt.figure()
-    #     plt.imshow(data, cmap='hot')
-    #     # plt.autoscale(False)
-    #     plt.plot(x, y, 'b.')
-    #     plt.show()
-
-    return galaxy_names, maxima_img
 
 
 
@@ -651,7 +642,7 @@ if __name__ == "__main__":
                            '587742062171521094.fits', '588015508212220022.fits', '588016890639941781.fits',
                            '588017725480108223.fits']
 
-    out = image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587733603734388952.fits')
+    out = image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587734621629513866.fits')
     # out = image_analysis(imgs[0])
     # for index, img in enumerate(imgs[0:100]):
     #     out = image_analysis(img)
