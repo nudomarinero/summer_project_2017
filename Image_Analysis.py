@@ -12,11 +12,14 @@ import traceback
 from astropy.io import fits
 from astropy.stats import sigma_clipped_stats
 import matplotlib.pyplot as plt
+from matplotlib import path
 import numpy.ma as ma
 import numpy as np
 from skimage import morphology
 from skimage import measure
 from skimage import filters
+from skimage.morphology import dilation, erosion, square, ball, disk, diamond, star, watershed
+from skimage.draw import polygon
 import scipy.ndimage as ndimage
 import scipy.ndimage.filters as filters
 from utils import parallel_process
@@ -132,7 +135,7 @@ def galaxy_isolation(image):
 
     return ma.filled(pic_plot, 0), image_name
 
-def find_local_maximum(data, savefig=False):
+def find_local_maximum(data, plot=False):
     """
     Finds the location and the flux of all maxima in the image.
 
@@ -145,10 +148,6 @@ def find_local_maximum(data, savefig=False):
     """
     neighborhood_size = 20
     threshold = np.average(data[data > 0])
-
-    # blobs = data > 0.8*threshold
-    # labels = measure.label(blobs, neighbors=8)
-    # plot_image(labels, cmax=None)
 
     data_max = filters.maximum_filter(data, neighborhood_size)
     # plot_image(data_max, presentation=True, output_name='maximum_filter')
@@ -165,20 +164,20 @@ def find_local_maximum(data, savefig=False):
     maxima_xy_loc = np.array(ndimage.center_of_mass(data, labeled, range(1, num_objects+1)), dtype=np.int)
     maxima_data = [[i[1], i[0], data[i[0], i[1]]] for i in maxima_xy_loc]
     # print(maxima_data)
-    if savefig:
+    if plot:
         fig = plt.figure()
         ax = fig.gca()
         plt.imshow(data, cmap='hot')
         plt.autoscale(False)
         plt.plot(maxima_xy_loc[:, 1], maxima_xy_loc[:, 0], 'b.')
         
-        ax.tick_params(axis='x', colors='white')
-        ax.xaxis.label.set_color('white')
-        ax.set_xlabel('x pixel')
-        ax.tick_params(axis='y', colors='white')
-        ax.yaxis.label.set_color('white')
-        ax.set_ylabel('y pixel')
-        fig.savefig('Presentation/'+'maxima_locations'+'.png', facecolor='none', bbox_inches='tight')
+        # ax.tick_params(axis='x', colors='white')
+        # ax.xaxis.label.set_color('white')
+        # ax.set_xlabel('x pixel')
+        # ax.tick_params(axis='y', colors='white')
+        # ax.yaxis.label.set_color('white')
+        # ax.set_ylabel('y pixel')
+        # fig.savefig('Presentation/'+'maxima_locations'+'.png', facecolor='none', bbox_inches='tight')
 
     return maxima_data
 
@@ -282,7 +281,7 @@ def shift_image(image_data, x, y):
 
     return new_image
 
-def minAsymmetry(image_data, plot=False, size=3):
+def minAsymmetry(image_data, maxima, plot=False, size=5):
     """
     Calculates the minimum value asymmetry of the image by choosing the center
     of rotation pixels neighbouring the center (128, 128).
@@ -299,18 +298,32 @@ def minAsymmetry(image_data, plot=False, size=3):
         Output: The minimum flux and binary asymmetry
 
     """
-    min_asmmetry = 2
+    # print(maxima)
+    max_distance_from_center = np.inf
+    for n, maximum in enumerate(maxima):
+        x, y = maximum[0], maximum[1]
+        if np.sqrt((x-128)**2+(y-128)**2) < max_distance_from_center:
+            max_distance_from_center = np.sqrt((x-128)**2+(y-128)**2)
+            maximum_idx = n
+
+    if max_distance_from_center < 11:
+        x_center, y_center = maxima[maximum_idx][0], maxima[maximum_idx][1]
+    else:
+        x_center, y_center = 128, 128
+    min_asmmetry = np.inf
     for i in range(-size, size+1, 1):
         for j in range(-size, size+1, 1):
-            new_image = shift_image(image_data, 128+i, 128+j)
+            new_image = shift_image(image_data, x_center+i, y_center+j)
             asymmetry = np.sum(np.abs(new_image-new_image[::-1, ::-1]))/(2*np.sum(new_image))
             if asymmetry < min_asmmetry:
-                min_asmmetry, min_x, min_y = copy.deepcopy(asymmetry), 128+i, 128+j
+                min_asmmetry, min_x, min_y = copy.deepcopy(asymmetry), x_center+i, y_center+j
                 min_new_image = copy.deepcopy(new_image)
             # plt.plot(128+i, 128+j, 'b.')
+    # print(min_x, min_y)
     new_image_data_binary = np.where(min_new_image != 0, 1, 0)
     flipped_data_binary = np.where(min_new_image[::-1, ::-1] != 0, 1, 0)
     min_asymmetry_binary = np.sum(np.abs(new_image_data_binary-flipped_data_binary))/(2*np.sum(new_image_data_binary))
+    
     # print('{}, {}, {}, {}'.format(min_asmmetry, min_asymmetry_binary, min_x-128, min_y-128))
     # out_file.write('{}, {}, {}, {}\n'.format(min_asmmetry, asymmetry_binary, min_x-128, min_y-128))
 
@@ -330,9 +343,6 @@ def detect_star(galaxy, binsize=53, no_of_previous_bins=8, threshold_factor=1.73
     detection = False
     # print(int(len(galaxy_compressed)/40))
     bins = np.min(np.array([int(len(galaxy_compressed)/70), binsize], dtype='int'))
-    # bins = 100
-    # print(bins)
-    # plt.figure()
     counts, edges = np.histogram(galaxy_compressed[galaxy_compressed > np.average(galaxy_compressed)],
                                   bins)
     breakpoint = 0
@@ -411,6 +421,25 @@ def detect_star(galaxy, binsize=53, no_of_previous_bins=8, threshold_factor=1.73
     # plt.cla()
     return detection
 
+def split_star_from_galaxy(galaxy, galaxy_name, plot=False):
+
+    img = np.zeros_like(galaxy)
+    contours = measure.find_contours(galaxy, np.average(galaxy[galaxy > 0]))
+    for i, contour in enumerate(contours):
+        rr, cc = polygon(contour[:, 0], contour[:, 1], img.shape)
+        img[rr, cc] = i+1
+
+    image_galaxy = np.where(galaxy != 0, 1, 0)
+    maxima = find_local_maximum(galaxy)
+    labels = watershed(-img.astype(bool).astype(int), img, mask=image_galaxy)
+    # plt.imshow(labels)
+    split_galaxy = ma.masked_array(galaxy, labels != labels[128, 128]).filled(0)
+    if plot:
+        plt.figure()
+        plt.imshow(split_galaxy, cmap='hot')
+
+    return split_galaxy
+
 def image_analysis(image):
     """
     Analysis of the image to give the number of maxima in the galaxy and it's
@@ -432,23 +461,31 @@ def image_analysis(image):
     """
     try:
         galaxy, galaxy_name = galaxy_isolation(image)
-        # plot_image(galaxy)
-        maxima = find_local_maximum(galaxy)
+        maxima = find_local_maximum(galaxy, False)
         asymmetry_flux_180, asymmetry_binary_180 = determine_asymmetry_180(galaxy, plot=False)
         asymmetry_flux_90, asymmetry_binary_90 = determine_asymmetry_90(galaxy)
-        min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy, plot=False)  
-
+        min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy, maxima, plot=False)  
+        # print(min_asmmetry_flux)
+        # print(min_asmmetry_flux)
         detect_status = False
+        # plot_image(galaxy)
+        # print(min_asmmetry_flux, min_asmmetry_binary)
         if len(maxima) == 1:
             detect_status = False
         else:
-            detect_status = detect_star(galaxy)
+            detect_status = detect_star(galaxy, plot=False)
+            if detect_status:
+                galaxy_split = split_star_from_galaxy(galaxy, galaxy_name, plot=False)
+                min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy_split, maxima, plot=False)
+                # print(min_asmmetry_flux)
+                # plot_image(galaxy)
+                # plot_image(galaxy_split)
 
         return [galaxy_name, maxima, asymmetry_flux_180, asymmetry_binary_180,
                 asymmetry_flux_90, asymmetry_binary_90, min_asmmetry_flux,
                 min_asmmetry_binary, detect_status]
     except Exception as err:
-        # traceback.print_exc()
+        traceback.print_exc()
         print(err)
         return [image.split('/')[-1], np.array([np.nan, np.nan, np.nan]),
                 np.nan, np.nan, np.nan, np.nan, np.nan]
@@ -614,17 +651,23 @@ if __name__ == "__main__":
                            '587742062171521094.fits', '588015508212220022.fits', '588016890639941781.fits',
                            '588017725480108223.fits']
 
-    # out = image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587744873711600007.fits')
+    out = image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587733603734388952.fits')
+    # out = image_analysis(imgs[0])
+    # for index, img in enumerate(imgs[0:100]):
+    #     out = image_analysis(img)
+        # print('Image {} processed'.format(index+1))
+    
+    plt.show()
     # print(out)
     # parameter = Parameters()
     # parameter.star_detect(out)
-    out = image_analysis(imgs[773])
+    # out = image_analysis(imgs[773])
     # t1 = time.clock()
-    # detect_star(out[-1], plot=False)
+    # detect_star(out[-1], plot=True)
     # print(time.clock()-t1)
     # image_analysis(imgs[257])
     # image_analysis(imgs[1397])
-    plt.show()
+    # plt.show()
     # min_asmmetry_flux, maxima, galaxy_name, galaxy = out[5], out[1], out[0], out[-1]
     # with warnings.catch_warnings():
     #     warnings.simplefilter("ignore", category=RuntimeWarning)
