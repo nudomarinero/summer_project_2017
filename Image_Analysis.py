@@ -315,7 +315,7 @@ def minAsymmetry(image_data, maxima, plot=False, size=5):
         x_center, y_center = maxima[maximum_idx][0], maxima[maximum_idx][1]
     else:
         x_center, y_center = 128, 128
-    print(x_center, y_center, end=', ')
+    # print(x_center, y_center, end=', ')
     min_asmmetry = np.inf
     for i in range(-size, size+1, 1):
         for j in range(-size, size+1, 1):
@@ -507,7 +507,7 @@ def image_analysis(image):
     """
     try:
         galaxy, galaxy_name = galaxy_isolation(image)
-        plot_image(galaxy)
+        # plot_image(galaxy)
         maxima = find_local_maximum(galaxy, False)
         asymmetry_flux_180, asymmetry_binary_180 = determine_asymmetry_180(galaxy, plot=False)
         asymmetry_flux_90, asymmetry_binary_90 = determine_asymmetry_90(galaxy)
