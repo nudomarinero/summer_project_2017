@@ -311,11 +311,11 @@ def minAsymmetry(image_data, maxima, plot=False, size=5):
             max_distance_from_center = np.sqrt((x-128)**2+(y-128)**2)
             maximum_idx = n
     # print(max_distance_from_center, maxima)
-    # if max_distance_from_center < 11:
-    x_center, y_center = maxima[maximum_idx][0], maxima[maximum_idx][1]
-    # else:
-    #     x_center, y_center = 128, 128
-    # print(x_center, y_center)
+    if max_distance_from_center < 20:
+        x_center, y_center = maxima[maximum_idx][0], maxima[maximum_idx][1]
+    else:
+        x_center, y_center = 128, 128
+    print(x_center, y_center, end=', ')
     min_asmmetry = np.inf
     for i in range(-size, size+1, 1):
         for j in range(-size, size+1, 1):
@@ -507,12 +507,13 @@ def image_analysis(image):
     """
     try:
         galaxy, galaxy_name = galaxy_isolation(image)
+        plot_image(galaxy)
         maxima = find_local_maximum(galaxy, False)
         asymmetry_flux_180, asymmetry_binary_180 = determine_asymmetry_180(galaxy, plot=False)
         asymmetry_flux_90, asymmetry_binary_90 = determine_asymmetry_90(galaxy)
         min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy, maxima, plot=False)  
         detect_status = False
-        # print(min_asmmetry_flux)
+        # print(galaxy_name, min_asmmetry_flux)
 
         if len(maxima) == 1:
             detect_status = False
@@ -521,7 +522,7 @@ def image_analysis(image):
             if detect_status:
                 galaxy_split = split_star_from_galaxy(galaxy, galaxy_name, plot=False)
                 min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy_split, maxima, plot=False)
-                # print(min_asmmetry_flux)
+                # print(galaxy_name, min_asmmetry_flux)
 
         return [galaxy_name, maxima, asymmetry_flux_180, asymmetry_binary_180,
                 asymmetry_flux_90, asymmetry_binary_90, min_asmmetry_flux,
@@ -642,7 +643,7 @@ if __name__ == "__main__":
                            '587742062171521094.fits', '588015508212220022.fits', '588016890639941781.fits',
                            '588017725480108223.fits']
 
-    out = image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587734621629513866.fits')
+    out = image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587742062171521094.fits')
     # out = image_analysis(imgs[0])
     # for index, img in enumerate(imgs[0:100]):
     #     out = image_analysis(img)
