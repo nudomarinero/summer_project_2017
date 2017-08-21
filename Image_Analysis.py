@@ -25,12 +25,25 @@ import scipy.ndimage.filters as filters
 from utils import parallel_process
 # from star_detection_parameters import Parameters
 
+TINY_SIZE = 12
+SMALL_SIZE = 16
+MEDIUM_SIZE = 20
+BIGGER_SIZE = 24
+
+plt.rc('font', size=TINY_SIZE)          # controls default text sizes
+plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+
 # img_file_dir = '/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/'
 # out_file = open('neigbour_test.txt', 'w')
 
 # Type 'sphinx-apidoc -f -o source/ ../' to create documentation.
 
-def plot_image(image_data, cmin=0, cmax=None, cmap='hot', axis=None, text="", presentation=False, output_name=None):
+def plot_image(image_data, cmin=0, cmax=None, cmap='hot', axis=None, text="", title="", presentation=False, output_name=None):
     """
     Plots a 2d figure using matplotlib's imshow function.
 
@@ -44,7 +57,7 @@ def plot_image(image_data, cmin=0, cmax=None, cmap='hot', axis=None, text="", pr
             [Optional, default=None]
         text (str): Text to write at bottom left corner of image. [Optional]
     """
-    fig = plt.figure()
+    fig = plt.figure(figsize=(7, 6))
     ax = fig.add_subplot(111)
     ax.imshow(image_data, clim=[cmin, cmax], cmap=cmap)
     if axis is not None:
@@ -60,6 +73,8 @@ def plot_image(image_data, cmin=0, cmax=None, cmap='hot', axis=None, text="", pr
         ax.xaxis.label.set_color('white')
         ax.tick_params(axis='y', colors='white')
         ax.yaxis.label.set_color('white')
+        title_obj = plt.title(title) #get the title property handler
+        plt.setp(title_obj, color='white')
         fig.savefig('Presentation/'+output_name+'.png', facecolor='none', bbox_inches='tight')
 
 def smooth_image(image, do_sigma_clipping=True, threshold=None):
@@ -94,7 +109,7 @@ def smooth_image(image, do_sigma_clipping=True, threshold=None):
     if do_sigma_clipping:
         # image_data_test = image_data[image_data < 40]
         mean, median, std = sigma_clipped_stats(image_data, sigma=3.0, iters=5)
-        threshold = mean+1*std
+        threshold = -1.5*mean+2.5*median
         # print(threshold)
 
     return moving_avg_img, threshold
@@ -338,9 +353,9 @@ def minAsymmetry(image_data, maxima, plot=False, size=5):
         plot_image(image_data)
         diff_binary = np.abs(new_image_data_binary-flipped_data_binary)
         diff = np.abs(new_image-new_image[::-1, ::-1])
-        plot_image(diff_binary, cmap='Greys', cmax=1, text=np.round(min_asymmetry_binary, 3))
+        plot_image(diff_binary, cmap='Greys', cmax=1, text=np.round(min_asymmetry_binary, 3), presentation=False, output_name='asym_binary_587739609175031857', title='Binary Asymmetry')
         plot_image(ma.masked_array(diff, diff == 0),
-                   cmax=np.max(diff), cmap='Greys', text=np.round(min_asmmetry, 3))
+                   cmax=np.max(diff), cmap='Greys', text=np.round(min_asmmetry, 3), presentation=False, output_name='asym_flux_587739609175031857', title='Flux Asymmetry')
 
     return min_asmmetry, min_asymmetry_binary
 
@@ -440,7 +455,7 @@ def detect_star(galaxy, binsize=53, no_of_previous_bins=8, threshold_factor=1.73
         plt.hist(galaxy_compressed[galaxy_compressed > np.average(galaxy_compressed)],
                                     bins, color='b', zorder=-1,)
 
-        # fig.savefig('Presentation/detect_star_587739167310807244_hist.png', transparent=True, bbox_inches='tight')
+        fig.savefig('Presentation/detect_star_587735660477743159_hist.png', transparent=True, bbox_inches='tight')
 
     # plt.cla()
     return detection
@@ -459,18 +474,43 @@ def split_star_from_galaxy(galaxy, galaxy_name, plot=False):
 
     img = np.zeros_like(galaxy)
     contours = measure.find_contours(galaxy, np.average(galaxy[galaxy > 0]))
+    if plot:
+        fig, ax = plt.subplots()
+        ax.imshow(galaxy, cmap='hot')
+        for contour in contours:
+            ax.plot(contour[:, 1], contour[:, 0], linewidth=2)
+        plt.setp(ax.get_yticklabels(), visible=False)
+        plt.setp(ax.get_yticklines(), visible=False)
+        plt.setp(ax.get_xticklabels(), visible=False)
+        plt.setp(ax.get_xticklines(), visible=False)
+
+        fig.savefig('Presentation/split_star_contours.png', facecolor='none', bbox_inches='tight')
+    # plt.show()
     for i, contour in enumerate(contours):
         rr, cc = polygon(contour[:, 0], contour[:, 1], img.shape)
         img[rr, cc] = i+1
 
     image_galaxy = np.where(galaxy != 0, 1, 0)
-    maxima = find_local_maximum(galaxy)
     labels = watershed(-img.astype(bool).astype(int), img, mask=image_galaxy)
+    if plot:
+        fig, ax = plt.subplots()
+        ax.imshow(img, cmap='hot')
+        plt.setp(ax.get_yticklabels(), visible=False)
+        plt.setp(ax.get_yticklines(), visible=False)
+        plt.setp(ax.get_xticklabels(), visible=False)
+        plt.setp(ax.get_xticklines(), visible=False)
+
+        fig.savefig('Presentation/split_star_labels.png', facecolor='none', bbox_inches='tight')
     # plt.imshow(labels)
     split_galaxy = ma.masked_array(galaxy, labels != labels[128, 128]).filled(0)
     if plot:
-        plt.figure()
-        plt.imshow(split_galaxy, cmap='hot')
+        fig, ax = plt.subplots()
+        ax.imshow(split_galaxy, cmap='hot')
+        plt.setp(ax.get_yticklabels(), visible=False)
+        plt.setp(ax.get_yticklines(), visible=False)
+        plt.setp(ax.get_xticklabels(), visible=False)
+        plt.setp(ax.get_xticklines(), visible=False)
+        fig.savefig('Presentation/split_star_galaxy.png', facecolor='none', bbox_inches='tight')
 
     return split_galaxy
 
@@ -643,8 +683,8 @@ if __name__ == "__main__":
                            '587742062171521094.fits', '588015508212220022.fits', '588016890639941781.fits',
                            '588017725480108223.fits']
 
-    out = image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587742062171521094.fits')
-    # out = image_analysis(imgs[0])
+    out = image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/588016890639941781.fits')
+    # out = image_analysis(imgs[773])
     # for index, img in enumerate(imgs[0:100]):
     #     out = image_analysis(img)
         # print('Image {} processed'.format(index+1))
