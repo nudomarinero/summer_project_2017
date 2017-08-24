@@ -25,18 +25,21 @@ import scipy.ndimage.filters as filters
 from utils import parallel_process
 # from star_detection_parameters import Parameters
 
-TINY_SIZE = 12
-SMALL_SIZE = 16
-MEDIUM_SIZE = 20
-BIGGER_SIZE = 24
+plt.style.use(['black_fonts', 'presentation'])
+TITLE_COLOR = 'black'
 
-plt.rc('font', size=TINY_SIZE)          # controls default text sizes
-plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
-plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
-plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
-plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+# TINY_SIZE = 12
+# SMALL_SIZE = 16
+# MEDIUM_SIZE = 20
+# BIGGER_SIZE = 24
+
+# plt.rc('font', size=TINY_SIZE)          # controls default text sizes
+# plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+# plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+# plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+# plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+# plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+# plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
 # img_file_dir = '/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/'
 # out_file = open('neigbour_test.txt', 'w')
@@ -68,14 +71,12 @@ def plot_image(image_data, cmin=0, cmax=None, cmap='hot', axis=None, text="", ti
             horizontalalignment='center',
             verticalalignment='center',
             transform=ax.transAxes)
+    # plt.title('test')
+    # fig.savefig('Report/test.png', bbox_inches='tight')
     if presentation:
-        ax.tick_params(axis='x', colors='white')
-        ax.xaxis.label.set_color('white')
-        ax.tick_params(axis='y', colors='white')
-        ax.yaxis.label.set_color('white')
         title_obj = plt.title(title) #get the title property handler
-        plt.setp(title_obj, color='white')
-        fig.savefig('Presentation/'+output_name+'.png', facecolor='none', bbox_inches='tight')
+        plt.setp(title_obj, color=TITLE_COLOR)
+        fig.savefig('Report/'+output_name+'.png', facecolor='none', bbox_inches='tight')
 
 def smooth_image(image, do_sigma_clipping=True, threshold=None):
     """
@@ -92,6 +93,7 @@ def smooth_image(image, do_sigma_clipping=True, threshold=None):
     """
     #pylint: disable=maybe-no-member
     image_data = fits.open(image)[0].data
+    # plot_image(image_data, presentation=True, output_name='Before_smoothing')
     moving_avg_img = np.zeros_like(image_data)
 
     for y in range(image_data.shape[1]-1):
@@ -106,10 +108,12 @@ def smooth_image(image, do_sigma_clipping=True, threshold=None):
             except:
                 moving_avg_img[x, y] = image_data[x, y]
 
+    # plot_image(moving_avg_img, presentation=True, output_name='After_smoothing')
     if do_sigma_clipping:
         # image_data_test = image_data[image_data < 40]
         mean, median, std = sigma_clipped_stats(image_data, sigma=3.0, iters=5)
-        threshold = -1.5*mean+2.5*median
+        threshold = mean+1*std
+        # threshold = -1.5*mean+2.5*median+1*std
         # print(threshold)
 
     return moving_avg_img, threshold
@@ -353,9 +357,9 @@ def minAsymmetry(image_data, maxima, plot=False, size=5):
         plot_image(image_data)
         diff_binary = np.abs(new_image_data_binary-flipped_data_binary)
         diff = np.abs(new_image-new_image[::-1, ::-1])
-        plot_image(diff_binary, cmap='Greys', cmax=1, text=np.round(min_asymmetry_binary, 3), presentation=False, output_name='asym_binary_587739609175031857', title='Binary Asymmetry')
+        plot_image(diff_binary, cmap='Greys', cmax=1, text=np.round(min_asymmetry_binary, 3), presentation=False, output_name='Binary_asymmetry', title='Binary Asymmetry')
         plot_image(ma.masked_array(diff, diff == 0),
-                   cmax=np.max(diff), cmap='Greys', text=np.round(min_asmmetry, 3), presentation=False, output_name='asym_flux_587739609175031857', title='Flux Asymmetry')
+                   cmax=np.max(diff), cmap='Greys', text=np.round(min_asmmetry, 3), presentation=False, output_name='Flux_asymmetry', title='Flux Asymmetry')
 
     return min_asmmetry, min_asymmetry_binary
 
@@ -413,20 +417,16 @@ def detect_star(galaxy, binsize=53, no_of_previous_bins=8, threshold_factor=1.73
     # plot_image(galaxy)
 
     if plot:
-        fig = plt.figure()
+        fig = plt.figure(figsize=(6, 6))
         ax = fig.gca()
 
-        ax.tick_params(axis='x', colors='white')
         ax.set_xlabel('Flux')
-        ax.xaxis.label.set_color('white')
-        ax.tick_params(axis='y', colors='white')
         ax.set_ylabel('No. of occurrences')
-        ax.yaxis.label.set_color('white')
 
-        ax.spines['bottom'].set_color('white')
-        ax.spines['top'].set_color('white')
-        ax.spines['left'].set_color('white')
-        ax.spines['right'].set_color('white')
+        # ax.spines['bottom'].set_color('white')
+        # ax.spines['top'].set_color('white')
+        # ax.spines['left'].set_color('white')
+        # ax.spines['right'].set_color('white')
 
         edges = np.repeat(edges, 2)
         breakpoint *= 2
@@ -455,7 +455,7 @@ def detect_star(galaxy, binsize=53, no_of_previous_bins=8, threshold_factor=1.73
         plt.hist(galaxy_compressed[galaxy_compressed > np.average(galaxy_compressed)],
                                     bins, color='b', zorder=-1,)
 
-        fig.savefig('Presentation/detect_star_587735660477743159_hist.png', transparent=True, bbox_inches='tight')
+        fig.savefig('Report/detect_star_587739406795341869_hist.png', transparent=True, bbox_inches='tight')
 
     # plt.cla()
     return detection
@@ -484,14 +484,13 @@ def split_star_from_galaxy(galaxy, galaxy_name, plot=False):
         plt.setp(ax.get_xticklabels(), visible=False)
         plt.setp(ax.get_xticklines(), visible=False)
 
-        fig.savefig('Presentation/split_star_contours.png', facecolor='none', bbox_inches='tight')
+        fig.savefig('Report/split_star_contours.png', facecolor='none', bbox_inches='tight')
     # plt.show()
     for i, contour in enumerate(contours):
-        rr, cc = polygon(contour[:, 0], contour[:, 1], img.shape)
-        img[rr, cc] = i+1
+        if len(contour) > 25:
+            rr, cc = polygon(contour[:, 0], contour[:, 1], img.shape)
+            img[rr, cc] = i+1
 
-    image_galaxy = np.where(galaxy != 0, 1, 0)
-    labels = watershed(-img.astype(bool).astype(int), img, mask=image_galaxy)
     if plot:
         fig, ax = plt.subplots()
         ax.imshow(img, cmap='hot')
@@ -500,7 +499,20 @@ def split_star_from_galaxy(galaxy, galaxy_name, plot=False):
         plt.setp(ax.get_xticklabels(), visible=False)
         plt.setp(ax.get_xticklines(), visible=False)
 
-        fig.savefig('Presentation/split_star_labels.png', facecolor='none', bbox_inches='tight')
+        fig.savefig('Report/split_star_contour_labels.png', facecolor='none', bbox_inches='tight')
+
+    image_galaxy = np.where(galaxy != 0, 1, 0)
+    labels = watershed(-img.astype(bool).astype(int), img, mask=image_galaxy)
+    if plot:
+        fig, ax = plt.subplots()
+        ax.imshow(labels, cmap='hot')
+        plt.setp(ax.get_yticklabels(), visible=False)
+        plt.setp(ax.get_yticklines(), visible=False)
+        plt.setp(ax.get_xticklabels(), visible=False)
+        plt.setp(ax.get_xticklines(), visible=False)
+
+        fig.savefig('Report/split_star_labels.png', facecolor='none', bbox_inches='tight')
+
     # plt.imshow(labels)
     split_galaxy = ma.masked_array(galaxy, labels != labels[128, 128]).filled(0)
     if plot:
@@ -510,9 +522,91 @@ def split_star_from_galaxy(galaxy, galaxy_name, plot=False):
         plt.setp(ax.get_yticklines(), visible=False)
         plt.setp(ax.get_xticklabels(), visible=False)
         plt.setp(ax.get_xticklines(), visible=False)
-        fig.savefig('Presentation/split_star_galaxy.png', facecolor='none', bbox_inches='tight')
+        fig.savefig('Report/split_star_galaxy.png', facecolor='none', bbox_inches='tight')
 
     return split_galaxy
+
+def remove_small_star(galaxy, plot=False):
+    img = np.zeros_like(galaxy)
+    contours = measure.find_contours(galaxy, 1*np.average(galaxy[galaxy > 0]))
+    if len(contours) == 1:
+        # print(True)
+        return galaxy
+    contour_sizes = np.zeros(len(contours))
+    contour_avg = np.inf
+    for c, contour in enumerate(contours):
+        # print(len(contour))
+        contour_sizes[c] = len(contour)
+        if len(contour) > 40:
+            x, y = np.average(contour[:, 1]), np.average(contour[:, 0])
+            if np.sqrt((x-128)**2+(y-128)**2) < contour_avg:
+                contour_avg = np.sqrt((x-128)**2+(y-128)**2)
+                contour_idx = c
+
+    check_large_contours = contour_sizes > 135
+    contain_small_star = False
+    if (np.sum(check_large_contours) >= 2) :
+        contain_small_star = False
+    else:
+        for c, contour in enumerate(contours):
+            if c != contour_idx:
+            # only check for contours not belonging to galaxy
+                if 20 <= len(contour) <= 65:
+                    contain_small_star = True
+    
+    if plot:
+        fig, ax = plt.subplots()
+        ax.imshow(galaxy, cmap='hot')
+        # ax.plot(contours[contour_idx][:, 1], contours[contour_idx][:, 0], linewidth=2)
+        for contour in contours:
+            ax.plot(contour[:, 1], contour[:, 0], linewidth=2)
+        plt.setp(ax.get_yticklabels(), visible=False)
+        plt.setp(ax.get_yticklines(), visible=False)
+        plt.setp(ax.get_xticklabels(), visible=False)
+        plt.setp(ax.get_xticklines(), visible=False)
+
+    if contain_small_star:
+        for i, contour in enumerate(contours):
+            if len(contour) > 20:
+                rr, cc = polygon(contour[:, 0], contour[:, 1], img.shape)
+                img[rr, cc] = i+1
+
+        img_not_galaxy = ma.masked_array(img, img == img[128, 128]).filled(0)
+        # fig, ax = plt.subplots()
+        # ax.imshow(img_not_galaxy, cmap='hot')
+        regions = measure.regionprops(measure.label(img_not_galaxy))
+        for i in range(len(regions)):
+            possible_star = regions[i]
+            y0, x0 = possible_star.centroid
+            a = possible_star.major_axis_length / 2.
+            b = possible_star.minor_axis_length / 2.
+
+            eccentricity = np.sqrt((1-(b**2/a**2)))
+            # print('eccentricity:', eccentricity)
+            if eccentricity > 0.75:
+                ## Then not a star as it is not circular
+                return galaxy
+            else:     
+                if plot:
+                    fig, ax = plt.subplots()
+                    ax.imshow(img, cmap='hot')
+
+                image_galaxy = np.where(galaxy != 0, 1, 0)
+                labels = watershed(-img.astype(bool).astype(int), img, mask=image_galaxy)
+
+                split_galaxy = ma.masked_array(galaxy, labels != labels[128, 128]).filled(0)
+                if plot:
+                    fig, ax = plt.subplots()
+                    ax.imshow(split_galaxy, cmap='hot')
+                    plt.setp(ax.get_yticklabels(), visible=False)
+                    plt.setp(ax.get_yticklines(), visible=False)
+                    plt.setp(ax.get_xticklabels(), visible=False)
+                    plt.setp(ax.get_xticklines(), visible=False)
+                    # fig.savefig('Report/split_star_galaxy.png', facecolor='none', bbox_inches='tight')
+                return split_galaxy
+
+    else:
+        return galaxy
 
 def image_analysis(image):
     """
@@ -547,20 +641,23 @@ def image_analysis(image):
     """
     try:
         galaxy, galaxy_name = galaxy_isolation(image)
-        # plot_image(galaxy)
+        # plot_image(galaxy, presentation=False, output_name='detect_star_'+galaxy_name.split('.')[0])
+        galaxy = remove_small_star(galaxy, plot=False)
+        # plot_image(galaxy, presentation=False, output_name='detect_star_'+galaxy_name.split('.')[0])
         maxima = find_local_maximum(galaxy, False)
         asymmetry_flux_180, asymmetry_binary_180 = determine_asymmetry_180(galaxy, plot=False)
         asymmetry_flux_90, asymmetry_binary_90 = determine_asymmetry_90(galaxy)
         min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy, maxima, plot=False)  
         detect_status = False
         # print(galaxy_name, min_asmmetry_flux)
-
+        
         if len(maxima) == 1:
             detect_status = False
         else:
             detect_status = detect_star(galaxy, plot=False)
             if detect_status:
                 galaxy_split = split_star_from_galaxy(galaxy, galaxy_name, plot=False)
+                # plot_image(galaxy_split, presentation=False, output_name='detect_star_'+galaxy_name.split('.')[0])
                 min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy_split, maxima, plot=False)
                 # print(galaxy_name, min_asmmetry_flux)
 
@@ -570,6 +667,7 @@ def image_analysis(image):
     except Exception as err:
         traceback.print_exc()
         print(err)
+        print(image.split('/')[-1])
         return [image.split('/')[-1], np.array([np.nan, np.nan, np.nan]),
                 np.nan, np.nan, np.nan, np.nan, np.nan]
 
@@ -683,10 +781,36 @@ if __name__ == "__main__":
                            '587742062171521094.fits', '588015508212220022.fits', '588016890639941781.fits',
                            '588017725480108223.fits']
 
-    out = image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/588016890639941781.fits')
-    # out = image_analysis(imgs[773])
-    # for index, img in enumerate(imgs[0:100]):
+    small_star_tests = ['587739507159990339.fits', '587739609175031857.fits', '587744873715597513.fits',
+                        '587734622710792236.fits', '587732483820093568.fits', '587726016692093083.fits',
+                        '587739131348582565.fits', '587729748448182892.fits', '588017990703251464.fits',
+                        '587742616175182087.fits', '587739406801961158.fits', '587742577534304450.fits',
+                        '588017703484391495.fits', '587728918985375911.fits', '587733429234237590.fits',
+                        '587732583130136762.fits']
+
+    # 587734622710792236.fits ???
+    # 587726016692093083.fits ?
+    # 588017990703251464.fits ? Most likely a star
+    # 587726878882725948.fits, star far too close.
+    # 588017978367803503.fits ?
+    # 587732583130136762.fits | removes small galaxy | fixed
+
+    out = image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/588298664655061021.fits')
+    # out = image_analysis(imgs[269])
+    # image_analysis(file_dir+small_star_tests[11])
+    # for i in np.random.randint(0,1998,size=10):
+    #     print(i)
+    #     image_analysis(imgs[i])
+    #     print()
+
+    # for index, img in enumerate(imgs[260:272]):
+    #     print(index)
     #     out = image_analysis(img)
+    #     plt.show()
+    # for index, img in enumerate(small_star_tests):
+    #     out = image_analysis(file_dir+img)
+    #     plt.show()
+    #     print()
         # print('Image {} processed'.format(index+1))
     
     plt.show()
