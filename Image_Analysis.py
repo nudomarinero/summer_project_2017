@@ -537,6 +537,7 @@ def remove_small_star(galaxy, plot=False):
         return galaxy
     contour_sizes = np.zeros(len(contours))
     contour_avg = np.inf
+    contour_idx = 0
     for c, contour in enumerate(contours):
         # print(len(contour))
         contour_sizes[c] = len(contour)
@@ -673,7 +674,7 @@ def image_analysis(image):
         else:
             detect_status = detect_star(galaxy, plot=False)
             if detect_status:
-                galaxy_split = split_star_from_galaxy(galaxy, galaxy_name, plot=True)
+                galaxy_split = split_star_from_galaxy(galaxy, galaxy_name, plot=False)
                 # plot_image(galaxy_split, presentation=False, output_name='detect_star_'+galaxy_name.split('.')[0])
                 min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy_split, maxima, plot=False)
                 # print(galaxy_name, min_asmmetry_flux)
@@ -833,7 +834,7 @@ if __name__ == "__main__":
     weird_267k = ['587734863758819334.fits', '587725470665277729.fits', '587738065663754413.fits']
 
     # t1 = time.clock()
-    out = image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587738065663754413.fits')
+    out = image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/588017702935527502.fits')
     # print(time.clock()-t1)
 
     # out = image_analysis(imgs[269])
