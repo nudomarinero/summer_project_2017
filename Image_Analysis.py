@@ -25,8 +25,8 @@ import scipy.ndimage.filters as filters
 from utils import parallel_process
 # from star_detection_parameters import Parameters
 
-plt.style.use(['black_fonts', 'presentation'])
-TITLE_COLOR = 'black'
+# plt.style.use(['black_fonts', 'presentation'])
+# TITLE_COLOR = 'black'
 
 # TINY_SIZE = 12
 # SMALL_SIZE = 16
