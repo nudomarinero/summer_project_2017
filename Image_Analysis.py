@@ -514,6 +514,8 @@ def split_star_from_galaxy(galaxy, galaxy_name, plot=False):
         fig.savefig('Report/split_star_labels.png', facecolor='none', bbox_inches='tight')
 
     # plt.imshow(labels)
+    # labels = measure.label(np.where(labels != 0, 1, 0))
+
     split_galaxy = ma.masked_array(galaxy, labels != labels[128, 128]).filled(0)
     if plot:
         fig, ax = plt.subplots()
@@ -571,11 +573,15 @@ def remove_small_star(galaxy, plot=False):
         galaxy_label = 1
         label_count = 2
         for i, contour in enumerate(contours):
-            if 22 <= len(contour) <= 59:
-                rr, cc = polygon(contour[:, 0], contour[:, 1], img.shape)
-                img[rr, cc] = label_count
-                label_count += 1
-            if len(contour) > 59:
+            if i != contour_idx:
+                if 22 <= len(contour) <= 59:
+                    rr, cc = polygon(contour[:, 0], contour[:, 1], img.shape)
+                    img[rr, cc] = label_count
+                    label_count += 1
+                if len(contour) > 59:
+                    rr, cc = polygon(contour[:, 0], contour[:, 1], img.shape)
+                    img[rr, cc] = galaxy_label
+            if i == contour_idx:
                 rr, cc = polygon(contour[:, 0], contour[:, 1], img.shape)
                 img[rr, cc] = galaxy_label
         if plot:
@@ -597,7 +603,6 @@ def remove_small_star(galaxy, plot=False):
             # print('eccentricity:', eccentricity)
             if eccentricity < 0.75:
                 ## then it's circular
-
                 image_galaxy = np.where(galaxy != 0, 1, 0)
                 labels = watershed(-img.astype(bool).astype(int), img, mask=image_galaxy)
 
@@ -613,6 +618,7 @@ def remove_small_star(galaxy, plot=False):
             plt.setp(ax.get_xticklabels(), visible=False)
             plt.setp(ax.get_xticklines(), visible=False)
             # fig.savefig('Report/split_star_galaxy.png', facecolor='none', bbox_inches='tight')
+        # print(galaxy)
         return galaxy
 
     else:
@@ -667,7 +673,7 @@ def image_analysis(image):
         else:
             detect_status = detect_star(galaxy, plot=False)
             if detect_status:
-                galaxy_split = split_star_from_galaxy(galaxy, galaxy_name, plot=False)
+                galaxy_split = split_star_from_galaxy(galaxy, galaxy_name, plot=True)
                 # plot_image(galaxy_split, presentation=False, output_name='detect_star_'+galaxy_name.split('.')[0])
                 min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy_split, maxima, plot=False)
                 # print(galaxy_name, min_asmmetry_flux)
@@ -824,8 +830,10 @@ if __name__ == "__main__":
             '587739815315964115.fits', '587735743693848946.fits', '587727213348520295.fits',
             '587726879421956195.fits',]
 
+    weird_267k = ['587734863758819334.fits', '587725470665277729.fits', '587738065663754413.fits']
+
     # t1 = time.clock()
-    # out = image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587729159501447315.fits')
+    out = image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587738065663754413.fits')
     # print(time.clock()-t1)
 
     # out = image_analysis(imgs[269])
@@ -843,8 +851,8 @@ if __name__ == "__main__":
     #     plt.show()
 
     # t1 = time.clock()
-    for index, img in enumerate(diff):
-        out = image_analysis(file_dir+img)
+    # for index, img in enumerate(diff):
+    #     out = image_analysis(file_dir+img)
         # plt.show()
     # print(time.clock()-t1)
     #     print()
