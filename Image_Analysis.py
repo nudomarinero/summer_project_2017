@@ -535,7 +535,6 @@ def remove_small_star(galaxy, plot=False):
         return galaxy
     contour_sizes = np.zeros(len(contours))
     contour_avg = np.inf
-    contour_idx = 0
     for c, contour in enumerate(contours):
         # print(len(contour))
         contour_sizes[c] = len(contour)
@@ -826,7 +825,7 @@ if __name__ == "__main__":
             '587726879421956195.fits',]
 
     # t1 = time.clock()
-    out = image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587726877798301756.fits')
+    # out = image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587729159501447315.fits')
     # print(time.clock()-t1)
 
     # out = image_analysis(imgs[269])
@@ -844,8 +843,8 @@ if __name__ == "__main__":
     #     plt.show()
 
     # t1 = time.clock()
-    # for index, img in enumerate(diff):
-    #     out = image_analysis(file_dir+img)
+    for index, img in enumerate(diff):
+        out = image_analysis(file_dir+img)
         # plt.show()
     # print(time.clock()-t1)
     #     print()
