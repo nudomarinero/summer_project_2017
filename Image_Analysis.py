@@ -3,6 +3,8 @@ Created on 21 Jul 2017
 
 @author: Sahl
 '''
+# import pyximport
+# pyximport.install()
 import glob
 import time
 import copy
@@ -22,7 +24,8 @@ from skimage.morphology import dilation, erosion, square, ball, disk, diamond, s
 from skimage.draw import polygon
 import scipy.ndimage as ndimage
 import scipy.ndimage.filters as filters
-from utils import parallel_process
+from scipy.interpolate import interp2d, rbf, Rbf
+# from utils import parallel_process
 # from star_detection_parameters import Parameters
 
 # plt.style.use(['black_fonts', 'presentation'])
@@ -118,7 +121,7 @@ def smooth_image(image, do_sigma_clipping=True, threshold=None):
 
     return moving_avg_img, threshold
 
-def galaxy_isolation(image):
+def galaxy_isolation(image, plot=False):
     """
     Isolates the galaxy from the foreground and background objects in the image.
 
@@ -128,18 +131,39 @@ def galaxy_isolation(image):
     Returns:
         Output: An image with only the galaxy and the name of the galaxy.
     """
-
+    image_name = image.split('/')[-1]
     pic, threshold_value = smooth_image(image)
     im = copy.deepcopy(pic)
     blobs = im > threshold_value
     labels = measure.label(blobs, neighbors=8)
-    labels = np.where(ma.filled(morphology.erosion(labels), 0) != 0, 1, 0)
+    # labels = np.where(ma.filled(morphology.erosion(labels), 0) != 0, 1, 0)
+    if plot:
+        fig, ax = plt.subplots()
+        ax.imshow(labels, cmap='hot', vmin=-20)
+
+        plt.setp(ax.get_yticklabels(), visible=False)
+        plt.setp(ax.get_yticklines(), visible=False)
+        plt.setp(ax.get_xticklabels(), visible=False)
+        plt.setp(ax.get_xticklines(), visible=False)
+
+        # fig.savefig('Report/labels_'+image_name.split('.')[0]+'.png', facecolor='none', bbox_inches='tight')
 
     size = labels.shape
     pic_plot = ma.masked_array(pic, labels != labels[int(size[1]/2), int(size[0]/2)])
 
+    if plot:
+        fig, ax = plt.subplots()
+        ax.imshow(ma.filled(pic_plot, 0), cmap='hot')
+
+        plt.setp(ax.get_yticklabels(), visible=False)
+        plt.setp(ax.get_yticklines(), visible=False)
+        plt.setp(ax.get_xticklabels(), visible=False)
+        plt.setp(ax.get_xticklines(), visible=False)
+
+        # fig.savefig('Report/isolated_initial_'+image_name.split('.')[0]+'.png', facecolor='none', bbox_inches='tight')
+
     pic_erode = np.where(ma.filled(morphology.erosion(pic_plot), 0) != 0, 1, 0)
-    for i in range(2):
+    for i in range(3):
         pic_erode = np.where(ma.filled(morphology.erosion(pic_erode), 0) != 0, 1, 0)
 
     pic_plot = ma.masked_array(pic, pic_erode == 0)
@@ -150,7 +174,17 @@ def galaxy_isolation(image):
     labels = measure.label(blobs, neighbors=8)
 
     pic_plot = ma.masked_array(pic, labels != labels[int(size[1]/2), int(size[0]/2)])
-    image_name = image.split('/')[-1]
+
+    if plot:
+        fig, ax = plt.subplots()
+        ax.imshow(ma.filled(pic_plot, 0), cmap='hot')
+
+        plt.setp(ax.get_yticklabels(), visible=False)
+        plt.setp(ax.get_yticklines(), visible=False)
+        plt.setp(ax.get_xticklabels(), visible=False)
+        plt.setp(ax.get_xticklines(), visible=False)
+
+        # fig.savefig('Report/isolated_final_'+image_name.split('.')[0]+'.png', facecolor='none', bbox_inches='tight')
 
     return ma.filled(pic_plot, 0), image_name
 
@@ -175,7 +209,7 @@ def find_local_maximum(data, plot=False):
     data_min = filters.minimum_filter(data, neighborhood_size)
     # plot_image(data_min, presentation=True, output_name='minimum_filter')
     diff = ((data_max - data_min) > threshold)
-    # plot_image(diff, presentation=False, output_name='min_max_diff')
+    # plot_image(diff, presentation=True, output_name='min_max_diff')
     maxima[diff == 0] = 0
     # plot_image(maxima, presentation=True, output_name='maxima_final')
 
@@ -184,7 +218,7 @@ def find_local_maximum(data, plot=False):
     maxima_data = [[i[1], i[0], data[i[0], i[1]]] for i in maxima_xy_loc]
     # print(maxima_data)
     if plot:
-        fig = plt.figure()
+        fig = plt.figure(figsize=(7, 6))
         ax = fig.gca()
         plt.imshow(data, cmap='hot')
         plt.autoscale(False)
@@ -192,11 +226,11 @@ def find_local_maximum(data, plot=False):
         
         # ax.tick_params(axis='x', colors='white')
         # ax.xaxis.label.set_color('white')
-        # ax.set_xlabel('x pixel')
+        ax.set_xlabel('x pixel')
         # ax.tick_params(axis='y', colors='white')
         # ax.yaxis.label.set_color('white')
-        # ax.set_ylabel('y pixel')
-        # fig.savefig('Presentation/'+'maxima_locations'+'.png', facecolor='none', bbox_inches='tight')
+        ax.set_ylabel('y pixel')
+        fig.savefig('Report/'+'maxima_locations'+'.png', facecolor='none', bbox_inches='tight')
 
     return maxima_data
 
@@ -302,6 +336,8 @@ def shift_image(image_data, x, y):
 
     return new_image
 
+
+
 def minAsymmetry(image_data, maxima, plot=False, size=5):
     """
     Calculates the minimum value asymmetry of the image by choosing the center
@@ -341,29 +377,26 @@ def minAsymmetry(image_data, maxima, plot=False, size=5):
             new_image = shift_image(image_data, x_center+i, y_center+j)
             asymmetry = np.sum(np.abs(new_image-new_image[::-1, ::-1]))/(2*np.sum(new_image))
             if asymmetry < min_asmmetry:
-                min_asmmetry, min_x, min_y = copy.deepcopy(asymmetry), x_center+i, y_center+j
-                min_new_image = copy.deepcopy(new_image)
-            # plt.plot(128+i, 128+j, 'b.')
-    # print(min_x, min_y)
+                min_asmmetry, min_x, min_y = asymmetry, x_center+i, y_center+j
+                min_new_image = new_image
+
     new_image_data_binary = np.where(min_new_image != 0, 1, 0)
     flipped_data_binary = np.where(min_new_image[::-1, ::-1] != 0, 1, 0)
     min_asymmetry_binary = np.sum(np.abs(new_image_data_binary-flipped_data_binary))/(2*np.sum(new_image_data_binary))
-    
-    # print('{}, {}, {}, {}'.format(min_asmmetry, min_asymmetry_binary, min_x-128, min_y-128))
-    # out_file.write('{}, {}, {}, {}\n'.format(min_asmmetry, asymmetry_binary, min_x-128, min_y-128))
 
     if plot:
         # print(plot)
-        plot_image(image_data)
+        plot_image(image_data, presentation=False, output_name='Flux_Image')
+        plot_image(np.where(image_data == 0, 1, 0), presentation=False, output_name='Binary_Image')
         diff_binary = np.abs(new_image_data_binary-flipped_data_binary)
         diff = np.abs(new_image-new_image[::-1, ::-1])
-        plot_image(diff_binary, cmap='Greys', cmax=1, text=np.round(min_asymmetry_binary, 3), presentation=False, output_name='Binary_asymmetry', title='Binary Asymmetry')
+        plot_image(diff_binary, cmap='Greys', cmax=1, text=np.round(min_asymmetry_binary, 3), presentation=False, output_name='Binary_asymmetry')
         plot_image(ma.masked_array(diff, diff == 0),
-                   cmax=np.max(diff), cmap='Greys', text=np.round(min_asmmetry, 3), presentation=False, output_name='Flux_asymmetry', title='Flux Asymmetry')
+                   cmax=np.max(diff), cmap='Greys', text=np.round(min_asmmetry, 3), presentation=False, output_name='Flux_asymmetry')
 
     return min_asmmetry, min_asymmetry_binary
 
-def detect_star(galaxy, binsize=53, no_of_previous_bins=8, threshold_factor=1.73, plot=False):
+def detect_star(galaxy, binsize=50, no_of_previous_bins=8, threshold_factor=1.73, plot=False):
     """
     Detects whether or not there is a foreground star in the image.
 
@@ -382,12 +415,13 @@ def detect_star(galaxy, binsize=53, no_of_previous_bins=8, threshold_factor=1.73
     Returns:
         True if star is detected. False otherwise.
     """
+   
     galaxy_compressed = ma.masked_array(galaxy, galaxy == 0).compressed()
     detection = False
     # print(int(len(galaxy_compressed)/40))
     bins = np.min(np.array([int(len(galaxy_compressed)/70), binsize], dtype='int'))
     counts, edges = np.histogram(galaxy_compressed[galaxy_compressed > np.average(galaxy_compressed)],
-                                  bins)
+                                bins)
     breakpoint = 0
     for c in range(len(counts)):
         if counts[c] > 0:
@@ -397,7 +431,8 @@ def detect_star(galaxy, binsize=53, no_of_previous_bins=8, threshold_factor=1.73
                 average_local_counts = ma.average(counts_for_avg)
                 # print(counts[c]-1.75*np.average(counts[c-10:c]))
                 if average_local_counts > 4:
-                    if counts[c] > threshold_factor*average_local_counts:
+                    # print(counts[c], threshold_factor*average_local_counts)
+                    if counts[c] >= np.floor(threshold_factor*average_local_counts):
                         # print(counts[c], edges[c])
                         detection = True
                         breakpoint = c
@@ -436,10 +471,10 @@ def detect_star(galaxy, binsize=53, no_of_previous_bins=8, threshold_factor=1.73
         fill_region = (hatch_from < edges)&(edges < hatch_till)
         # print(fill_region)
 
-        ax.fill_between(edges[fill_region], 
-                            hist[fill_region], 0, 
-                            color='green', edgecolor='k',
-                            hatch='///')
+        ax.fill_between(edges[fill_region],
+                        hist[fill_region], 0,
+                        color='green', edgecolor='k',
+                        hatch='///')
 
         hatch_from = edges[breakpoint-1]
         hatch_till = edges[breakpoint+4]
@@ -447,10 +482,10 @@ def detect_star(galaxy, binsize=53, no_of_previous_bins=8, threshold_factor=1.73
         fill_region = (hatch_from < edges)&(edges < hatch_till)
         # print(fill_region)
 
-        ax.fill_between(edges[fill_region], 
-                            hist[fill_region], 0, 
-                            color='red', edgecolor='k',
-                            hatch='xxx')
+        ax.fill_between(edges[fill_region],
+                        hist[fill_region], 0,
+                        color='red', edgecolor='k',
+                        hatch='xxx')
         # ax.plot(edges, hist, 'k')
         plt.hist(galaxy_compressed[galaxy_compressed > np.average(galaxy_compressed)],
                                     bins, color='b', zorder=-1,)
@@ -473,12 +508,27 @@ def split_star_from_galaxy(galaxy, galaxy_name, plot=False):
     """
 
     img = np.zeros_like(galaxy)
-    contours = measure.find_contours(galaxy, np.average(galaxy[galaxy > 0]))
+    contours = measure.find_contours(galaxy, 1.*np.average(galaxy[galaxy > 0]))
+
+    contour_avg = np.inf
+    contour_idx = 0
+    for c, contour in enumerate(contours):
+        # print(len(contour))
+        if len(contour) > 50:
+            x, y = np.average(contour[:, 1]), np.average(contour[:, 0])
+            if np.sqrt((x-128)**2+(y-128)**2) < contour_avg:
+                contour_avg = np.sqrt((x-128)**2+(y-128)**2)
+                contour_idx = c
+
+    max_flux = np.max(galaxy)
+    y, x = np.where(galaxy == max_flux)[0][0], np.where(galaxy == max_flux)[1][0]
+    # print(max_flux, x, y)
     if plot:
         fig, ax = plt.subplots()
         ax.imshow(galaxy, cmap='hot')
         for contour in contours:
             ax.plot(contour[:, 1], contour[:, 0], linewidth=2)
+        # ax.plot(x, y, 'ob')
         plt.setp(ax.get_yticklabels(), visible=False)
         plt.setp(ax.get_yticklines(), visible=False)
         plt.setp(ax.get_xticklabels(), visible=False)
@@ -486,10 +536,41 @@ def split_star_from_galaxy(galaxy, galaxy_name, plot=False):
 
         fig.savefig('Report/split_star_contours.png', facecolor='none', bbox_inches='tight')
     # plt.show()
+    galaxy_label = 1
+    label_count = 2
+    max_c = []
+    large_contours_labels = [] 
     for i, contour in enumerate(contours):
-        if len(contour) > 25:
+        if i != contour_idx:
+            if len(contour) > 50:
+                rr, cc = polygon(contour[:, 0], contour[:, 1], img.shape)
+                img[rr, cc] = label_count+1
+                # print(np.max(ma.masked_array(galaxy, img != i+1)))
+                max_c.append(np.max(ma.masked_array(galaxy, img != label_count+1)))
+                large_contours_labels.append(label_count+1)
+                label_count += 1
+        else:
             rr, cc = polygon(contour[:, 0], contour[:, 1], img.shape)
-            img[rr, cc] = i+1
+            img[rr, cc] = galaxy_label
+
+    # plt.figure()
+    # plt.imshow(img)
+
+    max_c = np.array(max_c)
+    mask_max = max_c < 200
+    if np.sum(mask_max) != len(mask_max):
+        for m, mask in enumerate(mask_max):
+            # print(mask, m)
+            if mask:
+                galaxy_region = (img != 0) & (img == large_contours_labels[m])
+                img[galaxy_region] = 1
+
+            # print(np.where(img == large_contours_labels[m]))
+
+    # plt.figure()
+    # plt.imshow(img)
+    # print(max_c)
+    # print(large_contours_labels)
 
     if plot:
         fig, ax = plt.subplots()
@@ -499,7 +580,7 @@ def split_star_from_galaxy(galaxy, galaxy_name, plot=False):
         plt.setp(ax.get_xticklabels(), visible=False)
         plt.setp(ax.get_xticklines(), visible=False)
 
-        fig.savefig('Report/split_star_contour_labels.png', facecolor='none', bbox_inches='tight')
+        # fig.savefig('Report/split_star_contour_labels.png', facecolor='none', bbox_inches='tight')
 
     image_galaxy = np.where(galaxy != 0, 1, 0)
     labels = watershed(-img.astype(bool).astype(int), img, mask=image_galaxy)
@@ -511,12 +592,10 @@ def split_star_from_galaxy(galaxy, galaxy_name, plot=False):
         plt.setp(ax.get_xticklabels(), visible=False)
         plt.setp(ax.get_xticklines(), visible=False)
 
-        fig.savefig('Report/split_star_labels.png', facecolor='none', bbox_inches='tight')
-
-    # plt.imshow(labels)
-    # labels = measure.label(np.where(labels != 0, 1, 0))
-
+        # fig.savefig('Report/split_star_labels.png', facecolor='none', bbox_inches='tight')
+    labels = measure.label(labels)
     split_galaxy = ma.masked_array(galaxy, labels != labels[128, 128]).filled(0)
+
     if plot:
         fig, ax = plt.subplots()
         ax.imshow(split_galaxy, cmap='hot')
@@ -524,7 +603,7 @@ def split_star_from_galaxy(galaxy, galaxy_name, plot=False):
         plt.setp(ax.get_yticklines(), visible=False)
         plt.setp(ax.get_xticklabels(), visible=False)
         plt.setp(ax.get_xticklines(), visible=False)
-        fig.savefig('Report/split_star_galaxy.png', facecolor='none', bbox_inches='tight')
+        # fig.savefig('Report/split_star_galaxy.png', facecolor='none', bbox_inches='tight')
 
     return split_galaxy
 
@@ -593,26 +672,28 @@ def remove_small_star(galaxy, plot=False):
         img_not_galaxy = ma.masked_array(img, img == galaxy_label).filled(0)
         # fig, ax = plt.subplots()
         # ax.imshow(img_not_galaxy, cmap='hot')
-        regions = measure.regionprops(measure.label(img_not_galaxy))
+        regions = measure.regionprops(measure.label(img_not_galaxy), intensity_image=galaxy)
         for i in range(len(regions)):
             possible_star = regions[i]
             x0, y0 = possible_star.centroid
-            a = possible_star.major_axis_length / 2.
-            b = possible_star.minor_axis_length / 2.
 
-            eccentricity = np.sqrt((1-(b**2/a**2)))
-            # print('eccentricity:', eccentricity)
-            if eccentricity < 0.75:
+            # print('eccentricity:', possible_star.eccentricity)
+            # print('max intensity:', possible_star.max_intensity)
+            if possible_star.eccentricity < 0.75:
                 ## then it's circular
                 image_galaxy = np.where(galaxy != 0, 1, 0)
                 labels = watershed(-img.astype(bool).astype(int), img, mask=image_galaxy)
-
-                galaxy = ma.masked_array(galaxy, labels == labels[int(x0), int(y0)]).filled(0)
+                # print(labels[int(np.ceil(x0)), int(np.ceil(y0))])
+                if labels[int(x0), int(y0)] == 1:
+                    galaxy = ma.masked_array(galaxy, labels == labels[int(np.ceil(x0)), int(np.ceil(y0))]).filled(0)
+                else:
+                    galaxy = ma.masked_array(galaxy, labels == labels[int(x0), int(y0)]).filled(0)
         if plot:
             fig, ax = plt.subplots()
             ax.imshow(labels, cmap='hot')
 
             fig, ax = plt.subplots()
+            # plt.plot(y0, x0, 'bo')
             ax.imshow(galaxy, cmap='hot')
             plt.setp(ax.get_yticklabels(), visible=False)
             plt.setp(ax.get_yticklines(), visible=False)
@@ -623,7 +704,7 @@ def remove_small_star(galaxy, plot=False):
         return galaxy
 
     else:
-        return galaxy
+        return galaxy            
 
 def image_analysis(image):
     """
@@ -657,8 +738,8 @@ def image_analysis(image):
 
     """
     try:
-        galaxy, galaxy_name = galaxy_isolation(image)
-        # plot_image(galaxy, presentation=False, output_name='detect_star_'+galaxy_name.split('.')[0])
+        galaxy, galaxy_name = galaxy_isolation(image, plot=False)
+        # plot_image(galaxy, presentation=False, output_name='small_star'+galaxy_name.split('.')[0])
         galaxy = remove_small_star(galaxy, plot=False)
         # plot_image(galaxy, presentation=False, output_name='detect_star_'+galaxy_name.split('.')[0])
         maxima = find_local_maximum(galaxy, False)
@@ -668,13 +749,16 @@ def image_analysis(image):
         detect_status = False
         # print(galaxy_name, min_asmmetry_flux, min_asmmetry_binary)
         # print(detect_status)
+        # split_star_from_galaxy(galaxy, galaxy_name, plot=True)
 
         if len(maxima) == 1:
             detect_status = False
         else:
             detect_status = detect_star(galaxy, plot=False)
+            # print(detect_status)
             if detect_status:
                 galaxy_split = split_star_from_galaxy(galaxy, galaxy_name, plot=False)
+                galaxy_split = remove_small_star(galaxy_split, plot=False)
                 # plot_image(galaxy_split, presentation=False, output_name='detect_star_'+galaxy_name.split('.')[0])
                 min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy_split, maxima, plot=False)
                 # print(galaxy_name, min_asmmetry_flux)
@@ -687,7 +771,7 @@ def image_analysis(image):
         print(err)
         print(image.split('/')[-1])
         return [image.split('/')[-1], np.array([np.nan, np.nan, np.nan]),
-                np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]
+                np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]
 
 def write_asymetry_to_file(filename, data_to_write):
     """
@@ -811,16 +895,6 @@ if __name__ == "__main__":
                               '587742060531744839.fits', '587726877798301756.fits', '587734861611204737.fits',
                               '587734893284884556.fits']
 
-    # 587734622710792236.fits ???
-    # 587726016692093083.fits ?
-    # 588017990703251464.fits ? Most likely a star
-    # 587726878882725948.fits, star far too close.
-    # 588017978367803503.fits ?
-    # 587732583130136762.fits | removes small galaxy | fixed
-    # 587742009508102509.fits, 587742864745103492.fits | eccentricity -> 0.7
-    # 587742060531744839 | star and galaxy
-    # 587726877798301756 | more than 1 star removed
-
     # 587728906102309121 | star sandwich -> adapt to large star removal?
     # 587731887350284565 | To see changes showing new labeling (small stars given
     #       different label to large objects): change large contour -> 105 and eccentricity to 0.87 
@@ -831,11 +905,19 @@ if __name__ == "__main__":
             '587739815315964115.fits', '587735743693848946.fits', '587727213348520295.fits',
             '587726879421956195.fits',]
 
-    weird_267k = ['587734863758819334.fits', '587725470665277729.fits', '587738065663754413.fits']
+    weird_267k = ['587734863758819334.fits', '587725470665277729.fits', '587738065663754413.fits', '588017702935527502.fits']
 
     # t1 = time.clock()
-    out = image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/588017702935527502.fits')
+    # print(len(imgs))
+    out = image_analysis('/Users/Sahl/Desktop/5877/588010136268046361.fits')
+    # out = image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587739097520799819.fits')
     # print(time.clock()-t1)
+
+    large_star_diff = ['587728666115506288.fits', '587741532766142675.fits', '587735660477743159.fits',
+                       '587729386076176389.fits', '587742572149080091.fits', '588017111293296655.fits',
+                       '588017702403899406.fits', '587742611067568140.fits', '587739811030761519.fits',
+                       '587729228223217760.fits', '588017978910769274.fits', '587736753543905454.fits',
+                       '587745540508745734.fits', '587730022799114306.fits', '587741816768889103.fits']
 
     # out = image_analysis(imgs[269])
     # image_analysis(file_dir+small_star_tests[11])
@@ -852,9 +934,10 @@ if __name__ == "__main__":
     #     plt.show()
 
     # t1 = time.clock()
-    # for index, img in enumerate(diff):
+    # for index, img in enumerate(large_star_diff):
     #     out = image_analysis(file_dir+img)
-        # plt.show()
+    #     print()
+    #     plt.show()
     # print(time.clock()-t1)
     #     print()
         # print('Image {} processed'.format(index+1))
