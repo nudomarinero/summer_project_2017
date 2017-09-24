@@ -7,7 +7,7 @@ Welcome to GalaxyAnalysis's documentation!
 ==========================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
 
@@ -18,13 +18,30 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
+Modules
+=======
+
+.. autosummary::
+   Image_Analysis
+   star_detection_parameters
+   test_star_detection
+
+     
+
 1. Image_Analysis
 =================
 
 .. automodule:: Image_Analysis
    :members:  
 
-2. test_star_detection
+2. star_detection_parameters
+============================
+
+.. automodule:: star_detection_parameters
+   :members:
+
+
+3. test_star_detection
 ======================
 
 .. automodule:: test_star_detection
