@@ -1,7 +1,5 @@
 '''
-Created on 21 Jul 2017
-
-@author: Sahl
+Analyses a galaxy
 '''
 # import pyximport
 # pyximport.install()
@@ -28,8 +26,8 @@ from scipy.interpolate import interp2d, rbf, Rbf
 # from utils import parallel_process
 # from star_detection_parameters import Parameters
 
-# plt.style.use(['black_fonts', 'presentation'])
-# TITLE_COLOR = 'black'
+plt.style.use(['black_fonts', 'presentation'])
+TITLE_COLOR = 'black'
 
 # TINY_SIZE = 12
 # SMALL_SIZE = 16
@@ -68,8 +66,9 @@ def plot_image(image_data, cmin=0, cmax=None, cmap='hot', axis=None, text="", ti
     ax.imshow(image_data, clim=[cmin, cmax], cmap=cmap)
     if axis is not None:
         plt.axis(axis)
-    ax.set_xlabel('x pixel')
-    ax.set_ylabel('y pixel')
+    # ax.set_xlabel('x pixel')
+    # ax.set_ylabel('y pixel')
+    plt.axis('off')
     ax.text(0.1, 0.05, text,
             horizontalalignment='center',
             verticalalignment='center',
@@ -79,12 +78,18 @@ def plot_image(image_data, cmin=0, cmax=None, cmap='hot', axis=None, text="", ti
     if presentation:
         title_obj = plt.title(title) #get the title property handler
         plt.setp(title_obj, color=TITLE_COLOR)
-        fig.savefig('Report/'+output_name+'.png', facecolor='none', bbox_inches='tight')
+        fig.savefig('docs/_images/'+output_name+'.png', facecolor='none', bbox_inches='tight')
 
 def smooth_image(image, do_sigma_clipping=True, threshold=None):
     """
     Decreases the noise and boosts bright regions by performing a 3x3 running
-    average on the image.
+    average on the image. The original image is shown on the left, and the
+    result of smoothing is shown on the right.
+
+    .. image:: //Users/Sahl/Desktop/University/Year_Summer_4/Summer_code/summer_project_2017/docs/_images/Before_smoothing.png
+           :width: 45%
+    .. image:: //Users/Sahl/Desktop/University/Year_Summer_4/Summer_code/summer_project_2017/docs/_images/After_smoothing.png
+           :width: 45%
 
     Args:
         image (str): The name of the image.
@@ -93,6 +98,11 @@ def smooth_image(image, do_sigma_clipping=True, threshold=None):
             threshold (None).
         threshold (float) [Optional]: If do_sigma_clipping=False, this parameter
             can be used to return an user defined threshold.
+    
+    Returns:
+        * **moving_avg_img** (*numpy array*) - The smoothed image.
+        * **threshold** (*float*) - The threshold value of the image which is
+          equal to the mean + standard deviation of the image.
     """
     #pylint: disable=maybe-no-member
     image_data = fits.open(image)[0].data
@@ -123,13 +133,23 @@ def smooth_image(image, do_sigma_clipping=True, threshold=None):
 
 def galaxy_isolation(image, plot=False):
     """
-    Isolates the galaxy from the foreground and background objects in the image.
+    Isolates the galaxy using an 8 connectivity algorithm. The figure on the
+    left is the smoothed image from :func:`smooth_image`, which is used to
+    isolate the galaxy producing the image on the right.
+
+    .. image:: //Users/Sahl/Desktop/University/Year_Summer_4/Summer_code/summer_project_2017/docs/_images/After_smoothing.png
+           :width: 45%
+           :alt: Smoothed image of galaxy used to isolate galaxy.
+    .. image:: //Users/Sahl/Desktop/University/Year_Summer_4/Summer_code/summer_project_2017/docs/_images/isolated_final_587739167310807244.png
+           :width: 45%
+           :alt: The isolated galaxy
 
     Args:
         image (str): The name of the galaxy.
 
     Returns:
-        Output: An image with only the galaxy and the name of the galaxy.
+        * *(numpy array)* - The isolated galaxy. 
+        * *(str)* - The name of the galaxy.
     """
     image_name = image.split('/')[-1]
     pic, threshold_value = smooth_image(image)
@@ -190,13 +210,19 @@ def galaxy_isolation(image, plot=False):
 
 def find_local_maximum(data, plot=False):
     """
-    Finds the location and the flux of all maxima in the image.
+    Finds the location and the flux of all maxima in the image. Acheives this
+    by using a combination of max and min filters and comparing to the original.
+    An example of the maxima found in an image is shown below:
+
+    .. image:: //Users/Sahl/Desktop/University/Year_Summer_4/Summer_code/summer_project_2017/docs/_images/maxima_locations.png
+           :width: 45%
+           :align: center
 
     Args:
         data (numpy array): 2d array that stores the data of the image.
 
     Returns:
-        Output: An array containing arrays that store the x, y coordinate of the maxima and the
+        list: A list containing lists that store the x, y coordinate of the maxima and the
         flux at that location.
     """
     neighborhood_size = 20
@@ -230,15 +256,22 @@ def find_local_maximum(data, plot=False):
         # ax.tick_params(axis='y', colors='white')
         # ax.yaxis.label.set_color('white')
         ax.set_ylabel('y pixel')
-        fig.savefig('Report/'+'maxima_locations'+'.png', facecolor='none', bbox_inches='tight')
+        # fig.savefig('docs/_images/'+'maxima_locations'+'.png', facecolor='none', bbox_inches='tight')
 
     return maxima_data
 
 def determine_asymmetry_180(image_data, plot=False):
-    """
+    r"""
     Determines the asymmetry coeffection by rotating the image 180 degrees
     around the center of the image (pixel [128, 128]) and comparing it to the
-    original image.
+    original image. The value of the asymmetry is found using
+
+    .. math::
+        A = \frac{\sum | I_{0} - I_{\theta} |}{2 \sum | I_{0} |}.
+
+    Where :math:`I_{0}` is the flux of an individual pixel of the original
+    image, and :math:`I_{\theta}` is the flux of the same pixel location as
+    the original image after a :math:`180^{\circ}` rotation.
 
     Args:
         image_data (numpy array): 2d array containing the data of the image used
@@ -273,10 +306,17 @@ def determine_asymmetry_180(image_data, plot=False):
         return 'nan'
 
 def determine_asymmetry_90(image_data, plot=False):
-    """
+    r"""
     Determines the asymmetry coeffection by rotating the image 90 degrees around
     the center of the image (pixel [128, 128]) and comparing it to the original
-    image.
+    image. The value of the asymmetry is found using
+
+    .. math::
+        A = \frac{\sum | I_{0} - I_{\theta} |}{2 \sum | I_{0} |}.
+
+    Where :math:`I_{0}` is the flux of an individual pixel of the original
+    image, and :math:`I_{\theta}` is the flux of the same pixel location as
+    the original image after a :math:`90^{\circ}` rotation.
 
     Args:
         image_data (numpy array): 2d array containing the data of the image used
@@ -323,7 +363,7 @@ def shift_image(image_data, x, y):
         y (int): The y coordinate in image_data to center on.
 
     Returns:
-        Output: 2d array of image_data with the x and y coordinate now at the
+        numpy array: 2d array of image_data with the x and y coordinate now at the
         center.
     """
     size = image_data.shape
@@ -339,10 +379,14 @@ def shift_image(image_data, x, y):
 
 
 def minAsymmetry(image_data, maxima, plot=False, size=5):
-    """
+    r"""
     Calculates the minimum value asymmetry of the image by choosing the center
     of rotation pixels neighbouring the center. The center is chosen as the 
-    maximum associated with the galaxy or as (128, 128).
+    maximum associated with the galaxy or as (128, 128).  The value of the
+    asymmetry is found using
+
+    .. math::
+        A = \frac{\sum | I_{0} - I_{\theta} |}{2 \sum | I_{0} |}.
 
     Args:
         image_data (numpy array): 2d array containing the data of the image.
@@ -398,7 +442,18 @@ def minAsymmetry(image_data, maxima, plot=False, size=5):
 
 def detect_star(galaxy, binsize=50, no_of_previous_bins=8, threshold_factor=1.73, plot=False):
     """
-    Detects whether or not there is a foreground star in the image.
+    Detects whether or not there is a foreground star in the image. Does this by
+    exploiting the fact that large stars tend to be saturated. Thus, plotting a
+    histogram of the flux is used to detect a spike in flux which occurs due to
+    the star. This is shown below.
+
+    .. image:: //Users/Sahl/Desktop/University/Year_Summer_4/Summer_code/summer_project_2017/docs/_images/detect_star_587739406795341869.png
+           :width: 45%
+    .. image:: //Users/Sahl/Desktop/University/Year_Summer_4/Summer_code/summer_project_2017/docs/_images/detect_star_587739406795341869_hist.png
+           :width: 45%
+
+    The green represents :data:`no_of_previous_bins`. The red bar represents
+    that a star has been detected.
 
     Args:
         galaxy (numpy array): An array containing the data of the isolated galaxy from
@@ -490,21 +545,31 @@ def detect_star(galaxy, binsize=50, no_of_previous_bins=8, threshold_factor=1.73
         plt.hist(galaxy_compressed[galaxy_compressed > np.average(galaxy_compressed)],
                                     bins, color='b', zorder=-1,)
 
-        fig.savefig('Report/detect_star_587739406795341869_hist.png', transparent=True, bbox_inches='tight')
+        # fig.savefig('docs/_images/detect_star_587739406795341869_hist.png', transparent=True, bbox_inches='tight')
 
     # plt.cla()
     return detection
 
 def split_star_from_galaxy(galaxy, galaxy_name, plot=False):
     """
-    Separates the star from the galaxy.
+    Separates large stars from the galaxy only if :func:`detect_star` returns
+    True. If it can locate the large star, the star is masked. If it can't, only
+    the object associated with the center of the image is returned. The result
+    is shown below.
+
+    .. image:: //Users/Sahl/Desktop/University/Year_Summer_4/Summer_code/summer_project_2017/docs/_images/split_star_contours.png
+           :width: 45%
+    .. image:: //Users/Sahl/Desktop/University/Year_Summer_4/Summer_code/summer_project_2017/docs/_images/split_star_galaxy.png
+           :width: 45%
 
     Args:
-        galaxy (numpy array): An array containing the data of the isolated galaxy from
-            :func:`galaxy_isolation`.
+        galaxy (numpy array): An array containing the flux data of the galaxy.
         galaxy_name (str): The name of the galaxy.
         plot (bool): Optional paramter, which when true will plot the galaxy
             separated from the star.
+
+    Returns:
+        * **galaxy** (*numpy array*) - The galaxy data.
     """
 
     img = np.zeros_like(galaxy)
@@ -608,6 +673,23 @@ def split_star_from_galaxy(galaxy, galaxy_name, plot=False):
     return split_galaxy
 
 def remove_small_star(galaxy, plot=False):
+    """
+    Separates small stars from the galaxy. Does this by locating the small stars
+    using contours, and then masking it. The result is shown below.
+
+    .. image:: //Users/Sahl/Desktop/University/Year_Summer_4/Summer_code/summer_project_2017/docs/_images/split_small_star_contours.png
+           :width: 45%
+    .. image:: //Users/Sahl/Desktop/University/Year_Summer_4/Summer_code/summer_project_2017/docs/_images/split_small_star_galaxy.png
+           :width: 45%
+
+    Args:
+        galaxy (numpy array): An array containing the flux data of the galaxy.
+        plot (bool): Optional paramter, which when true will plot the galaxy
+            separated from the star.
+
+    Returns:
+        * **galaxy** (*numpy array*) - The galaxy data.
+    """
     
     img = np.zeros_like(galaxy)
     contours = measure.find_contours(galaxy, 1*np.average(galaxy[galaxy > 0]))
@@ -648,6 +730,8 @@ def remove_small_star(galaxy, plot=False):
         plt.setp(ax.get_xticklabels(), visible=False)
         plt.setp(ax.get_xticklines(), visible=False)
 
+        # fig.savefig('docs/_images/split_small_star_contours.png', facecolor='none', bbox_inches='tight')        
+
     # print(contain_small_star)
     if contain_small_star:
         galaxy_label = 1
@@ -677,6 +761,12 @@ def remove_small_star(galaxy, plot=False):
             possible_star = regions[i]
             x0, y0 = possible_star.centroid
 
+            # fimg = possible_star.intensity_image
+            # fimg = ma.masked_array(fimg, fimg == 0)
+            # print(ma.std(fimg), ma.mean(fimg))
+            # plt.figure()
+            # plt.imshow(fimg, cmap='hot')
+
             # print('eccentricity:', possible_star.eccentricity)
             # print('max intensity:', possible_star.max_intensity)
             if possible_star.eccentricity < 0.75:
@@ -699,7 +789,7 @@ def remove_small_star(galaxy, plot=False):
             plt.setp(ax.get_yticklines(), visible=False)
             plt.setp(ax.get_xticklabels(), visible=False)
             plt.setp(ax.get_xticklines(), visible=False)
-            # fig.savefig('Report/split_star_galaxy.png', facecolor='none', bbox_inches='tight')
+            # fig.savefig('docs/_images/split_small_star_galaxy.png', facecolor='none', bbox_inches='tight')
         # print(galaxy)
         return galaxy
 
@@ -708,8 +798,14 @@ def remove_small_star(galaxy, plot=False):
 
 def image_analysis(image):
     """
-    Analysis of the image to give the number of maxima in the galaxy and it's
-    asymmetry values.
+    Analyses the image as follows. First, the galaxy is isolated using
+    :func:`galaxy_isolation`. Then it removes small stars using
+    :func:`remove_small_star`. The maxima are calculated using
+    :func:`find_local_maximum`. Then it removes large stars using
+    :func:`split_star_from_galaxy`. Finally the asymmetries are calculated using
+    :func:`asymmetry_flux_180`, :func:`asymmetry_binary_180`,
+    :func:`asymmetry_flux_90`,  :func:`asymmetry_binary_90`, and 
+    :func:`minAsymmetry`.
 
     Args:
         image (str): The name of the image
@@ -739,10 +835,11 @@ def image_analysis(image):
     """
     try:
         galaxy, galaxy_name = galaxy_isolation(image, plot=False)
-        # plot_image(galaxy, presentation=False, output_name='small_star'+galaxy_name.split('.')[0])
-        galaxy = remove_small_star(galaxy, plot=False)
         # plot_image(galaxy, presentation=False, output_name='detect_star_'+galaxy_name.split('.')[0])
-        maxima = find_local_maximum(galaxy, False)
+        # print(galaxy_name, end=' ')
+        galaxy = remove_small_star(galaxy, plot=True)
+        # plot_image(galaxy, presentation=False, output_name='Problem_'+galaxy_name.split('.')[0])
+        maxima = find_local_maximum(galaxy, plot=False)
         asymmetry_flux_180, asymmetry_binary_180 = determine_asymmetry_180(galaxy, plot=False)
         asymmetry_flux_90, asymmetry_binary_90 = determine_asymmetry_90(galaxy)
         min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy, maxima, plot=False)  
@@ -774,29 +871,12 @@ def image_analysis(image):
                 np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]
 
 def write_asymetry_to_file(filename, data_to_write):
-    """
-    Writes the various asymmetry values calculated from image_analysis to a
-    file.
-
-    Args:
-        filename (str): The name of the file.
-        data_to_write (list): The data written to the file. The data is the
-            output from :func:`image_analysis`.
-    """
     out_file = open(filename, 'w')
     out_file.write('Galaxy_name,A_flux_180,A_binary_180,A_flux_90,A_binary_90,Min_A_flux_180,Min_A_binary_180\n')
     for dat in data_to_write:
         out_file.write('{0},{2},{3},{4},{5},{6},{7}\n'.format(*dat))
 
 def write_maxima_to_file(filename, data_to_write):
-    """
-    Writes the location and flux of each maxima in the image.
-
-    Args:
-        filename (str): The name of the file.
-        data_to_write (list): The data written to the file. The data is the
-            output from image_analysis.
-    """
     out_file = open(filename, 'w')
     out_file.write('Galaxy_name,x,y,flux\n')
     for dat_img in data_to_write:
@@ -823,14 +903,6 @@ def write_maxima_to_file(filename, data_to_write):
             out_file.write('{},{},{}\n'.format(*dat_img[1]))
 
 def write_maxima_to_file_2(filename, data_to_write):
-    """
-    Writes the location and flux of each maxima in the image.
-
-    Args:
-        filename (str): The name of the file.
-        data_to_write (list): The data written to the file. The data is the
-            output from image_analysis.
-    """
     out_file = open(filename, 'w')
     out_file.write('Galaxy_name,x,y,flux\n')
     for dat_img in data_to_write:
@@ -909,8 +981,8 @@ if __name__ == "__main__":
 
     # t1 = time.clock()
     # print(len(imgs))
-    out = image_analysis('/Users/Sahl/Desktop/5877/588010136268046361.fits')
-    # out = image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/587739097520799819.fits')
+    # out = image_analysis('/Users/Sahl/Desktop/5877/588010136268046361.fits')
+    out = image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/588017703484391495.fits')
     # print(time.clock()-t1)
 
     large_star_diff = ['587728666115506288.fits', '587741532766142675.fits', '587735660477743159.fits',
@@ -934,7 +1006,7 @@ if __name__ == "__main__":
     #     plt.show()
 
     # t1 = time.clock()
-    # for index, img in enumerate(large_star_diff):
+    # for index, img in enumerate(small_star_tests):
     #     out = image_analysis(file_dir+img)
     #     print()
     #     plt.show()
