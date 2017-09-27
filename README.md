@@ -12,11 +12,9 @@ The goal of this project was to develop an algorithm that could quickly
 determine whether a galaxy was undergoing a merger or if it was isolated. The
 asymmetry given by,
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-\begin{figure}
- \includegraphics[width=300pt, height = 125 pt]{https://i.imgur.com/9uY1Plj.png}
-\end{figure}
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+\\begin{figure}  
+\\includegraphics[width=300pt, height = 125 pt]{https://i.imgur.com/9uY1Plj.png}  
+\\end{figure}
 
 is used to classify the galaxies. If `A > 0.2`, the galaxy is classified as a
 merger; non-merger otherwise.
