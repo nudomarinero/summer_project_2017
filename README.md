@@ -69,8 +69,6 @@ else:
         min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy_split, maxima, plot=False)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The above gives the following data:
-
 ### Analysis of a single image - option 2
 
 Alternatively, can just use
