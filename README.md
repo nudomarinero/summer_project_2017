@@ -117,4 +117,8 @@ for k in trange(nsteps, desc="Blocks"):
 This results in a list of lists with each index corresponding to the output from
 `image_analysis()`.
 
- 
+The `detections_best` folder
+----------------------------
+
+This contains output data of the 267457 galaxies with 0.03 \< z \< 0.1 from the
+SDSS DR7 survey.
