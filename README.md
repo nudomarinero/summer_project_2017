@@ -13,7 +13,7 @@ determine whether a galaxy was undergoing a merger or if it was isolated. The
 asymmetry given by,
 
 \\begin{figure}  
-\\includegraphics[width=300pt, height = 125 pt]{https://i.imgur.com/9uY1Plj.png}  
+\\includegraphics[width=300pt, height = 125 pt]{latex-image-1.png}  
 \\end{figure}
 
 is used to classify the galaxies. If `A > 0.2`, the galaxy is classified as a
