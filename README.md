@@ -10,10 +10,11 @@ asymmetry given by,
 
 ![Imgur](https://i.imgur.com/syGukgyt.png)
 
-is used to classify the galaxies. If `A > 0.2`, the galaxy is classified as a
-merger; non-merger otherwise.
-
- 
+is used to classify the galaxies. Where $$I_{0}$$ is the flux of an individual
+pixel of the original image and $$I_{\theta}$$  is the flux of the same pixel
+location as the original image after a 180 degree rotation around a chosen
+centroid. If `A > 0.2`, the galaxy is classified as a merger; non-merger
+otherwise.
 
 Installation and documentation
 ------------------------------
@@ -31,14 +32,14 @@ cd docs
 make html
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
- 
-
 Usage
 -----
 
+### Analysis of a single image - option 1
+
 For analysis of a single image such as:
 
-![Imgur](https://i.imgur.com/AbE3Eoy.png)
+![Imgur](https://i.imgur.com/AbE3Eoyb.png)
 
 -   First isolate the galaxy and remove any remaining small stars using
 
@@ -49,7 +50,7 @@ galaxy = remove_small_star(galaxy, plot=False)
 
 This results in the image looking like
 
-![Imgur](https://i.imgur.com/MBuQvkC.png)
+![Imgur](https://i.imgur.com/MBuQvkCb.png)
 
 -   Then, for the above image, the location of maxima and the asymmetry are
     calculated using
@@ -68,6 +69,10 @@ else:
         min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy_split, maxima, plot=False)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+The above gives the following data:
+
+### Analysis of a single image - option 2
+
 Alternatively, can just use
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -76,8 +81,41 @@ from Image_Analysis import image_analysis
 output_data = image_analysis(image_dir)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-where *image_dir* is the path to the image.
+where *image_dir* is the path to the image. This function returns the following
+data:
 
- 
+1.  The name of the galaxy.
+
+2.  The location and flux of the maxima.
+
+3.  The value of the flux and shape asymmetry under a 180 and 90 degree rotation
+    around the center.
+
+4.  The value of the flux and shape asymmetry under a 180 degree rotation around
+    the pixel that minimises the asymmetry.
+
+5.  Whether or not a large star exists.
+
+### Analysis of a large sample of images.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+import glob
+from tqdm import trange
+from utils import parallel_process
+from Image_Analysis import image_analysis
+
+imgs = glob.glob('path_to_image_folder/*.fits')
+
+step_size = 10000
+nsteps = len(imgs)//step_size + 1
+out = []
+for k in trange(nsteps, desc="Blocks"):
+ low_limit = k*step_size
+ high_limit = (k+1)*step_size
+ out += parallel_process(imgs[low_limit:high_limit], image_analysis, 4)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This results in a list of lists with each index corresponding to the output from
+`image_analysis()`.
 
  
