@@ -22,15 +22,11 @@ merger; non-merger otherwise.
 Installation and documentation
 ------------------------------
 
- 
-
 Clone the project in the terminal by typing:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 git git@github.com:nudomarinero/summer_project_2017.git
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
- 
 
 To create the documentation:
 
@@ -43,8 +39,6 @@ make html
 
 Usage
 -----
-
- 
 
 For analysis of a single image such as:
 
