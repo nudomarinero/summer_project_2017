@@ -10,11 +10,11 @@ asymmetry given by,
 
 ![Imgur](https://i.imgur.com/syGukgyt.png)
 
-is used to classify the galaxies. Where $$I_{0}$$ is the flux of an individual
-pixel of the original image and $$I_{\theta}$$  is the flux of the same pixel
-location as the original image after a 180 degree rotation around a chosen
-centroid. If `A > 0.2`, the galaxy is classified as a merger; non-merger
-otherwise.
+is used to classify the galaxies. Where I\<sub\>0\</sub\> is the flux of an
+individual pixel of the original image and I\<sub\>\\theta\</sub\> is the flux
+of the same pixel location as the original image after a 180 degree rotation
+around a chosen centroid. If `A > 0.2`, the galaxy is classified as a merger;
+non-merger otherwise.
 
 Installation and documentation
 ------------------------------
