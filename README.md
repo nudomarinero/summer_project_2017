@@ -27,9 +27,12 @@ git clone git@github.com:nudomarinero/summer_project_2017.git
 To create the documentation:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-cd docs
+cd summer_project_2017/
+cd docs/
 make html
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Requires sphinx to create documentation.**
 
 Usage
 -----
