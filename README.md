@@ -12,7 +12,7 @@ The goal of this project was to develop an algorithm that could quickly
 determine whether a galaxy was undergoing a merger or if it was isolated. The
 asymmetry given by,
 
-![](../../../../Screen Shot 2017-09-27 at 13.27.26.png)
+![](Screen Shot 2017-09-27 at 13.27.26.png)
 
 is used to classify the galaxies. If `A > 0.2`, the galaxy is classified as a
 merger; non-merger otherwise.
@@ -58,8 +58,6 @@ galaxy = remove_small_star(galaxy, plot=False)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This results in the image looking like
-
-![](Report/isolated_final_587739167310807244.png)
 
 -   Then, for the above image, the location of maxima and the asymmetry are
     calculated using
