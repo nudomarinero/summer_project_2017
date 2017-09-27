@@ -48,7 +48,7 @@ Usage
 
 For analysis of a single image such as:
 
-![](Report/Before_smoothing.png)
+![Imgur](https://i.imgur.com/MBjLkEo.png)
 
 -   First isolate the galaxy and remove any remaining small stars using
 
@@ -58,6 +58,8 @@ galaxy = remove_small_star(galaxy, plot=False)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This results in the image looking like
+
+![Imgur](https://i.imgur.com/SkP94RO.png)
 
 -   Then, for the above image, the location of maxima and the asymmetry are
     calculated using
