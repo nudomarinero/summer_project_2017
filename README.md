@@ -38,7 +38,7 @@ Usage
 
 For analysis of a single image such as:
 
-![Imgur](https://i.imgur.com/MBjLkEo.png)
+![Imgur](https://i.imgur.com/AbE3Eoy.png)
 
 -   First isolate the galaxy and remove any remaining small stars using
 
