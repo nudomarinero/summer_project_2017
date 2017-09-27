@@ -59,13 +59,13 @@ maxima = find_local_maximum(galaxy, plot=False)
 min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy, maxima, plot=False) 
 detect_status = False
 if len(maxima) == 1:
- detect_status = False
+    detect_status = False
 else:
- detect_status = detect_star(galaxy, plot=False) 
- if detect_status:
-  galaxy_split = split_star_from_galaxy(galaxy, galaxy_name, plot=False)
-  galaxy_split = remove_small_star(galaxy_split, plot=False)
-  min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy_split, maxima, plot=False)
+    detect_status = detect_star(galaxy, plot=False) 
+    if detect_status:
+        galaxy_split = split_star_from_galaxy(galaxy, galaxy_name, plot=False)
+        galaxy_split = remove_small_star(galaxy_split, plot=False)
+        min_asmmetry_flux, min_asmmetry_binary = minAsymmetry(galaxy_split, maxima, plot=False)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Alternatively, can just use
