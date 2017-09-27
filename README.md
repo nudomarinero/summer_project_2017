@@ -49,7 +49,7 @@ galaxy = remove_small_star(galaxy, plot=False)
 
 This results in the image looking like
 
-![Imgur](https://i.imgur.com/SkP94RO.png)
+![Imgur](https://i.imgur.com/MBuQvkC.png)
 
 -   Then, for the above image, the location of maxima and the asymmetry are
     calculated using
