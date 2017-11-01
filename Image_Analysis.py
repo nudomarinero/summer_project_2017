@@ -837,7 +837,7 @@ def image_analysis(image):
         galaxy, galaxy_name = galaxy_isolation(image, plot=False)
         # plot_image(galaxy, presentation=False, output_name='detect_star_'+galaxy_name.split('.')[0])
         # print(galaxy_name, end=' ')
-        galaxy = remove_small_star(galaxy, plot=True)
+        galaxy = remove_small_star(galaxy, plot=False)
         # plot_image(galaxy, presentation=False, output_name='Problem_'+galaxy_name.split('.')[0])
         maxima = find_local_maximum(galaxy, plot=False)
         asymmetry_flux_180, asymmetry_binary_180 = determine_asymmetry_180(galaxy, plot=False)
@@ -933,95 +933,4 @@ def write_detections(filename, data_to_write):
         out_file.write('{0},{6},{8}\n'.format(*dat))
 
 
-
-
-
-
-
-if __name__ == "__main__":
-
-    file_dir = '/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/'
-    imgs = glob.glob('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/5*.fits')
-    test_imgs = ['588013382727958540', '588013382727958540', '587739609175031857',
-                 '587727213348520295', '587742061616758804', '587736619321655535',
-                 '587739167310807244', '587733603734388952', '587739406805762069',
-                 '587734621629513866', '587744728761761895', '587742566784106610',
-                 '587730847428968484', '587742572149080091', '588017111293296655',
-                 '588007006334943294']
-    
-    imgs_affect_by_size = ['587725469052371011.fits', '587732156314747278.fits', '587733196234096696.fits',
-                           '587734621629513866.fits', '587735695912009805.fits', '587735743692996864.fits',
-                           '587741421638451429.fits', '587741708879921260.fits', '587742012751282716.fits',
-                           '587742062171521094.fits', '588015508212220022.fits', '588016890639941781.fits',
-                           '588017725480108223.fits']
-
-    small_star_tests = ['587739507159990339.fits', '587739609175031857.fits', '587744873715597513.fits',
-                        '587734622710792236.fits', '587732483820093568.fits', '587726016692093083.fits',
-                        '587739131348582565.fits', '587729748448182892.fits', '588017990703251464.fits',
-                        '587742616175182087.fits', '587739406801961158.fits', '587742577534304450.fits',
-                        '588017703484391495.fits', '587728918985375911.fits', '587733429234237590.fits',
-                        '587732583130136762.fits']
-
-    other_small_star_tests = ['587735743693848946.fits', '587738196113686666.fits', '587738409249734815.fits',
-                              '587738570319986831.fits', '587739379920208077.fits', '587742009508102509.fits',
-                              '587742060531744839.fits', '587726877798301756.fits', '587734861611204737.fits',
-                              '587734893284884556.fits']
-
-    # 587728906102309121 | star sandwich -> adapt to large star removal?
-    # 587731887350284565 | To see changes showing new labeling (small stars given
-    #       different label to large objects): change large contour -> 105 and eccentricity to 0.87 
-
-    diff = ['587741532766142675.fits', '587744873715597513.fits', '588007004165701671.fits',
-            '587729773680984272.fits', '587742577525457035.fits', '587736941449379858.fits',
-            '587736542023122964.fits', '587729971254198276.fits', '587739827674022085.fits',
-            '587739815315964115.fits', '587735743693848946.fits', '587727213348520295.fits',
-            '587726879421956195.fits',]
-
-    weird_267k = ['587734863758819334.fits', '587725470665277729.fits', '587738065663754413.fits', '588017702935527502.fits']
-
-    # t1 = time.clock()
-    # print(len(imgs))
-    # out = image_analysis('/Users/Sahl/Desktop/5877/588010136268046361.fits')
-    out = image_analysis('/Users/Sahl/Desktop/University/Year_Summer_4/Summer_Project/Data/588017703484391495.fits')
-    # print(time.clock()-t1)
-
-    large_star_diff = ['587728666115506288.fits', '587741532766142675.fits', '587735660477743159.fits',
-                       '587729386076176389.fits', '587742572149080091.fits', '588017111293296655.fits',
-                       '588017702403899406.fits', '587742611067568140.fits', '587739811030761519.fits',
-                       '587729228223217760.fits', '588017978910769274.fits', '587736753543905454.fits',
-                       '587745540508745734.fits', '587730022799114306.fits', '587741816768889103.fits']
-
-    # out = image_analysis(imgs[269])
-    # image_analysis(file_dir+small_star_tests[11])
-
-    # t1 = time.clock()
-    # for i in np.random.randint(0,1998,size=10):
-    #     # print(i)
-    #     image_analysis(imgs[i])
-    # print(time.clock()-t1)
-
-    # for index, img in enumerate(imgs[260:272]):
-    #     print(index)
-    #     out = image_analysis(img)
-    #     plt.show()
-
-    # t1 = time.clock()
-    # for index, img in enumerate(small_star_tests):
-    #     out = image_analysis(file_dir+img)
-    #     print()
-    #     plt.show()
-    # print(time.clock()-t1)
-    #     print()
-        # print('Image {} processed'.format(index+1))
-    
-    plt.show()
-    
-    # for t_img in imgs_affect_by_size:
-    #     galaxy, galaxy_name = galaxy_isolation(file_dir+t_img)
-    #     plot_image(galaxy)
-    #     plt.title(t_img)
-    #     plt.savefig('docs/_images/Figure_'+galaxy_name.split('.')[0]+'.png')
-    #     plt.cla()
-    # plt.show()
-    # out = []
 
